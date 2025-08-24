@@ -1,12 +1,6 @@
 package com.dsl.models;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+// Action.java
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes({
-    @JsonSubTypes.Type(value = SwitchAction.class, name = "SWITCH"),
-    @JsonSubTypes.Type(value = SendTemplateAction.class, name = "SEND"),
-    @JsonSubTypes.Type(value = GotoAction.class, name = "GOTO")
-})
-public interface Action {}
+// com.dsl.models.Action
+public sealed interface Action permits BranchAction, DeleteInsightAction, EndAction, GotoAction, IsSundayAction, MarkLeadPhaseAction, MarkPhaseAction, ScheduleFollowupAction, SendMessageAction, SendTemplateAction, SetMarkAction, SwitchAction, SwitchDirectionAction, UnknownAction, UnscheduleAction { }
