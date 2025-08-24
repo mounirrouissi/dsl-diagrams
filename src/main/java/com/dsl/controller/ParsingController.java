@@ -44,24 +44,41 @@ public class ParsingController {
         if (scriptCtx == null) return Collections.emptyList();
 
         // Map each track and return
-        return scriptCtx.track().stream()
+        List<TrackNode> trackNodes = scriptCtx.track().stream()
                 .map(this::mapTrackAndResolve)
                 .collect(Collectors.toList());
+        System.out.println("the returned track nodes = ");
+        trackNodes.forEach(System.out::println);
+        return trackNodes;
     }
 
     // Map a track and resolve SwitchAction branchless cases by consuming inline branch-lines inside the same state.
+
     private TrackNode mapTrackAndResolve(AivaParser.TrackContext trackCtx) {
         String trackName = safeTextOf(trackCtx.IDENTIFIER());
+
         // Map raw states first
-        List<StateNode> rawStates = trackCtx.state().stream()
-                .map(this::mapStateRaw)
-                .collect(Collectors.toList());
+        List<StateNode> rawStates = trackCtx.state().stream().map(this::mapStateRaw).toList();
 
         // For each state, if it contains a SwitchAction with empty branches,
         // gather BranchAction lines that exist in that state's action list and attach them.
         List<StateNode> resolvedStates = new ArrayList<>();
+
+        // COLLECT ALL BRANCH ACTIONS FROM REACTIVE_GOTO_STATES
+        Map<String, String> allBranches = new LinkedHashMap<>();
+
         for (StateNode s : rawStates) {
             List<Action> actions = new ArrayList<>(s.actions());
+
+            // Check if this is a reactive goto state (R1, R2, etc.)
+            if (s.trackName().startsWith("R") && !s.trackName().contains("-R")) {
+                for (Action action : actions) {
+                    if (action instanceof BranchAction ba) {
+                        allBranches.put(s.trackName(), ba.target()); // Use state name as branch label
+                    }
+                }
+            }
+
             // collect branch-line actions that appear in this state's actions
             List<BranchAction> branchLines = new ArrayList<>();
             Iterator<Action> it = actions.iterator();
@@ -69,8 +86,7 @@ public class ParsingController {
                 Action a = it.next();
                 if (a instanceof BranchAction ba) {
                     branchLines.add(ba);
-                    // remove branch lines from the action list; they'll be attached to switch
-                    it.remove();
+                    it.remove(); // remove branch lines from the action list
                 }
             }
 
@@ -82,9 +98,11 @@ public class ParsingController {
                     if (a instanceof SwitchAction sw) {
                         Map<String, String> existing = sw.branches();
                         if (existing == null || existing.isEmpty()) {
-                            // build map preserving order
+                            // build map preserving order - combine branchLines + allBranches
                             Map<String, String> gathered = new LinkedHashMap<>();
                             for (BranchAction ba : branchLines) gathered.put(ba.label(), ba.target());
+                            gathered.putAll(allBranches); // Add R1, R2, etc. from reactive states
+
                             // create new SwitchAction record with same function and filled branches
                             SwitchAction newSw = new SwitchAction(sw.function(), gathered);
                             actions.set(i, newSw);
@@ -93,24 +111,28 @@ public class ParsingController {
                         }
                     }
                 }
-                // If we couldn't attach (no empty switch found), we could either keep branchLines as-is
-                // or attach them to the first switch. For now: attach to the first switch if any.
-                if (!attached) {
-                    for (int i = 0; i < actions.size(); i++) {
-                        Action a = actions.get(i);
-                        if (a instanceof SwitchAction sw) {
-                            Map<String, String> existing = sw.branches() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(sw.branches());
-                            for (BranchAction ba : branchLines) existing.put(ba.label(), ba.target());
-                            actions.set(i, new SwitchAction(sw.function(), existing));
-                            attached = true;
-                            break;
-                        }
-                    }
-                }
-                // if still not attached, just ignore (branch-lines remain consumed)
             }
 
-            resolvedStates.add(new StateNode(s.trackName(),s.id(),  List.copyOf(actions)));
+            // Only add non-reactive states to resolved states (skip R1, R2, etc.)
+            if (!s.trackName().startsWith("R") || s.trackName().contains("-R")) {
+                resolvedStates.add(new StateNode(s.trackName(), s.id(), List.copyOf(actions)));
+            }
+        }
+
+        // If we found branches but no switch was updated, find the switch and update it
+        if (!allBranches.isEmpty()) {
+            for (int i = 0; i < resolvedStates.size(); i++) {
+                StateNode state = resolvedStates.get(i);
+                for (int j = 0; j < state.actions().size(); j++) {
+                    Action action = state.actions().get(j);
+                    if (action instanceof SwitchAction sw && (sw.branches() == null || sw.branches().isEmpty())) {
+                        List<Action> newActions = new ArrayList<>(state.actions());
+                        newActions.set(j, new SwitchAction(sw.function(), allBranches));
+                        resolvedStates.set(i, new StateNode(state.trackName(), state.id(), newActions));
+                        break;
+                    }
+                }
+            }
         }
 
         return new TrackNode(trackName, List.copyOf(resolvedStates));
