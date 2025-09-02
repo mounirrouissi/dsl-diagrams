@@ -326,7 +326,7 @@ START_TEMPLATE GENERIC_AN_5K_USED_NRTA_1ST_NRAA_TEMP
 
             Hello ${lead.contact.firstName},
 
-            It seems you might have been busy the last time I reached out to you, or your vehicle might not be due for its first service yet. To assist you in scheduling future appointments, could you please let me know the current mileage on your ${lead.product.year?c} ${lead.product.model?capitalize}?
+            It seems you might have been busy the last time I reached out to you, or your vehicleDTO might not be due for its first service yet. To assist you in scheduling future appointments, could you please let me know the current mileage on your ${lead.product.year?c} ${lead.product.model?capitalize}?
 
             Prefiere Espanol?
 
@@ -384,7 +384,7 @@ START_TEMPLATE GENERIC_AN_5K_USED_RTA_1ST_NRAA_TEMP
 
         Hello ${lead.contact.firstName},
 
-        It seems you might have been busy the last time I reached out to you, or your vehicle might not be due for its first service yet. To assist you in scheduling future appointments, could you please let me know the current mileage on your ${lead.product.year?c} ${lead.product.model?capitalize}?
+        It seems you might have been busy the last time I reached out to you, or your vehicleDTO might not be due for its first service yet. To assist you in scheduling future appointments, could you please let me know the current mileage on your ${lead.product.year?c} ${lead.product.model?capitalize}?
 
 	END_BODY
 END_TEMPLATE
@@ -784,7 +784,7 @@ START_TEMPLATE AN_LEXUS_10K_RTA_1ST_TEMP
             <#switch "${lead.futureServiceInteraction.type}">
                 <#case "Type B2">
                     Hey ${lead.contact.firstName},
-                    ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke ${lead.deal.contactedServiceMonth5k} about the first service for your ${lead.product.year?c} ${lead.product.model?capitalize}. I see you got your first service done on ${lead.deal.descriptiveServiceMonth5k} ${lead.deal.descriptiveServiceDayMonth5k}. I hope your vehicle is running smoothly. BTW, Your second service ${lead.deal.dueDateVerb10K} ${lead.deal.descriptiveDueDate10k} even if you have fewer miles than 10000.
+                    ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke ${lead.deal.contactedServiceMonth5k} about the first service for your ${lead.product.year?c} ${lead.product.model?capitalize}. I see you got your first service done on ${lead.deal.descriptiveServiceMonth5k} ${lead.deal.descriptiveServiceDayMonth5k}. I hope your vehicleDTO is running smoothly. BTW, Your second service ${lead.deal.dueDateVerb10K} ${lead.deal.descriptiveDueDate10k} even if you have fewer miles than 10000.
 
                     Would you like me to set this up for you, ${lead.contact.firstName}?
                     ${lead.agent.agentFirstName} ${lead.agent.agentLastName}
@@ -1007,7 +1007,7 @@ START_TEMPLATE AN_TOYOTA_10K_RTA_1ST_TEMP
             <#switch "${lead.futureServiceInteraction.type}">
                 <#case "Type B2">
                     Hey ${lead.contact.firstName},
-                    ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke ${lead.deal.contactedServiceMonth5k} about the 5K service for your ${lead.product.year?c} ${lead.product.model?capitalize}. I see you got your 5K done on ${lead.deal.descriptiveServiceMonth5k} ${lead.deal.descriptiveServiceDayMonth5k}. I hope your vehicle is running smoothly. BTW, Your 10K Service ${lead.deal.dueDateVerb10K} ${lead.deal.descriptiveDueDate10k} even if you have fewer miles than 10000.
+                    ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke ${lead.deal.contactedServiceMonth5k} about the 5K service for your ${lead.product.year?c} ${lead.product.model?capitalize}. I see you got your 5K done on ${lead.deal.descriptiveServiceMonth5k} ${lead.deal.descriptiveServiceDayMonth5k}. I hope your vehicleDTO is running smoothly. BTW, Your 10K Service ${lead.deal.dueDateVerb10K} ${lead.deal.descriptiveDueDate10k} even if you have fewer miles than 10000.
 
                     Would you like me to set this up for you, ${lead.contact.firstName}?
                     ${lead.agent.agentFirstName} ${lead.agent.agentLastName}
@@ -1138,7 +1138,7 @@ START_TEMPLATE AN_TOYOTA_5K_NEW_RTA_1ST_TEMP
 
         Hi ${lead.contact.firstName?lower_case?cap_first},
         ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center).
-        We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. <#if lead.deal.numberOfMonthsSinceSoldDate??>It's been ${lead.deal.numberOfMonthsSinceSoldDate} since you got your vehicle.</#if> I reached out to remind you about your 1st 5K Service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. (Even if you've less miles, this is recommended every 6 months. ToyotaCare will cover it).
+        We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. <#if lead.deal.numberOfMonthsSinceSoldDate??>It's been ${lead.deal.numberOfMonthsSinceSoldDate} since you got your vehicleDTO.</#if> I reached out to remind you about your 1st 5K Service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. (Even if you've less miles, this is recommended every 6 months. ToyotaCare will cover it).
 
         Do you want me to schedule this for you, ${lead.contact.firstName?lower_case?cap_first}?
         ${lead.agent.agentFirstName} ${lead.agent.agentLastName}
@@ -1173,7 +1173,7 @@ START_TEMPLATE AN_LEXUS_5K_NEW_RTA_1ST_TEMP
 	START_BODY
 
         Hi ${lead.contact.firstName},
-        ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. It's been ${lead.product.monthsBeforeVehiclePurchased} months since you got your vehicle. I reached out to remind you about your 1st maintenance service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. (Even if you've less miles, this is recommended every 6 months. Lexus Care will cover it).
+        ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. It's been ${lead.product.monthsBeforeVehiclePurchased} months since you got your vehicleDTO. I reached out to remind you about your 1st maintenance service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. (Even if you've less miles, this is recommended every 6 months. Lexus Care will cover it).
 
         Do you want me to schedule this for you, ${lead.contact.firstName}?
         ${lead.agent.agentFirstName} ${lead.agent.agentLastName}
@@ -1208,7 +1208,7 @@ START_TEMPLATE GENERIC_AN_5K_NEW_RTA_1ST_TEMP
 
         Hi ${lead.contact.firstName},
 
-        ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. <#if lead.deal.numberOfMonthsSinceSoldDate??>It's been ${lead.deal.numberOfMonthsSinceSoldDate} since you got your vehicle.</#if> I reached out to remind you about your 1st maintenance service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. Even if you have driven fewer than 5k miles, this service is recommended every 6 months.
+        ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. <#if lead.deal.numberOfMonthsSinceSoldDate??>It's been ${lead.deal.numberOfMonthsSinceSoldDate} since you got your vehicleDTO.</#if> I reached out to remind you about your 1st maintenance service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. Even if you have driven fewer than 5k miles, this service is recommended every 6 months.
 
         Do you want me to schedule this for you, ${lead.contact.firstName}?
         ${lead.agent.agentFirstName} ${lead.agent.agentLastName}
@@ -1227,7 +1227,7 @@ START_TEMPLATE FORD_5K_NEW_RTA_1ST_TEMP
 
         Hi ${lead.contact.firstName},
 
-        ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. <#if lead.deal.numberOfMonthsSinceSoldDate??>It's been ${lead.deal.numberOfMonthsSinceSoldDate} since you got your vehicle.</#if> I reached out to remind you about your 1st maintenance service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. Even if you have driven fewer than 5k miles, this service is recommended every 6 months<#switch "${lead.deal.vcpApplicable}"><#case "YES">. I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you. <#break><#case "NO">.<#break></#switch>
+        ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Center). We spoke in ${lead.deal.descriptiveLastContactedMonth} about your ${lead.product.year?c} ${lead.product.model?capitalize}. <#if lead.deal.numberOfMonthsSinceSoldDate??>It's been ${lead.deal.numberOfMonthsSinceSoldDate} since you got your vehicleDTO.</#if> I reached out to remind you about your 1st maintenance service that ${lead.deal.nextServiceWasDueOrMightBeDue} on ${lead.deal.nextServiceMonthInShortForm} ${lead.deal.nextServiceOrdinalDay}. Even if you have driven fewer than 5k miles, this service is recommended every 6 months<#switch "${lead.deal.vcpApplicable}"><#case "YES">. I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you. <#break><#case "NO">.<#break></#switch>
 
         Do you want me to schedule this for you, ${lead.contact.firstName}?
         ${lead.agent.agentFirstName} ${lead.agent.agentLastName}
@@ -1879,7 +1879,7 @@ START_TEMPLATE GENERIC_AN_SVC_DURATION_TEMP
 	END_ATTR
 	START_BODY
 
-        Our target is to complete the Express Service in about an hour from the time the vehicle goes in the shop, please ask your advisor at check-in for more accurate timing.
+        Our target is to complete the Express Service in about an hour from the time the vehicleDTO goes in the shop, please ask your advisor at check-in for more accurate timing.
 
 	 END_BODY
 END_TEMPLATE
@@ -1937,7 +1937,7 @@ START_TEMPLATE AN_LEXUS_GET_SHUTTLE_TEMP
 	END_ATTR
 	START_BODY
 
-        ${lead.contact.firstName}, I can set the appointment in the scheduler and have someone from our team reach out to you before the appointment to schedule your shuttle vehicle.
+        ${lead.contact.firstName}, I can set the appointment in the scheduler and have someone from our team reach out to you before the appointment to schedule your shuttle vehicleDTO.
 
 	 END_BODY
 END_TEMPLATE
@@ -1951,7 +1951,7 @@ START_TEMPLATE AN_LEXUS_GET_RENTAL_TEMP
 	END_ATTR
 	START_BODY
 
-        ${lead.contact.firstName}, I can set the appointment in the scheduler and have someone from our team reach out to you before the appointment to schedule your rental vehicle.
+        ${lead.contact.firstName}, I can set the appointment in the scheduler and have someone from our team reach out to you before the appointment to schedule your rental vehicleDTO.
 
 	 END_BODY
 END_TEMPLATE
@@ -1965,7 +1965,7 @@ START_TEMPLATE AN_LEXUS_GET_LYFT_TEMP
 	END_ATTR
 	START_BODY
 
-        ${lead.contact.firstName}, I can set the appointment in the scheduler and have someone from our team reach out to you before the appointment to schedule your lyft vehicle.
+        ${lead.contact.firstName}, I can set the appointment in the scheduler and have someone from our team reach out to you before the appointment to schedule your lyft vehicleDTO.
 
 	 END_BODY
 END_TEMPLATE
@@ -2035,7 +2035,7 @@ START_TEMPLATE AN_LOANER_NOT_AVAILABLE_TEMP
 	END_ATTR
 	START_BODY
 
-        ${lead.contact.firstName}, ${lead.office.name} does not typically offer loaner vehicles for Express Service, I can set your appointment on the schedule and have our loaner coordinator call you before your appointment to confirm if there is a loaner available.
+        ${lead.contact.firstName}, ${lead.office.name} does not typically offer loaner vehicleDTOS for Express Service, I can set your appointment on the schedule and have our loaner coordinator call you before your appointment to confirm if there is a loaner available.
 
 	 END_BODY
 END_TEMPLATE
@@ -2077,7 +2077,7 @@ START_TEMPLATE AUTONATION_SVC_DIFFERENT_LOC_TEMP
 	END_ATTR
 	START_BODY
 
-        Thank you for letting us know, we were hoping to see you again but understand. We hope you will continue to use AutoNation for your future vehicle sales and service need.
+        Thank you for letting us know, we were hoping to see you again but understand. We hope you will continue to use AutoNation for your future vehicleDTO sales and service need.
 
 	 END_BODY
 END_TEMPLATE
@@ -2147,7 +2147,7 @@ START_TEMPLATE AUTONATION_CUST_ASK_4WALKIN_TEMP
 	END_ATTR
 	START_BODY
 
-        Walk in appointments are accepted, we do recommend setting an appointment as the wait times for light maintenance may be lengthy and we cannot guarantee that your vehicle could be seen or completed on the same day.
+        Walk in appointments are accepted, we do recommend setting an appointment as the wait times for light maintenance may be lengthy and we cannot guarantee that your vehicleDTO could be seen or completed on the same day.
 
 	 END_BODY
 END_TEMPLATE
@@ -2542,7 +2542,7 @@ START_ATTR
 	END_ATTR
 	START_BODY
 
-        The ToyotaCare includes oil change. If your vehicle uses Synthetic oil, this is recommended at 10K and 20K. But the <#switch "${lead.deal.plannedServiceType?lower_case}"><#case "toyo_5k_new">5k<#break><#case "toyo_25k_new">25k<#break></#switch> Service also includes services such as tire rotation, fluid level adjustment, and brake inspection and won't cost you anything.
+        The ToyotaCare includes oil change. If your vehicleDTO uses Synthetic oil, this is recommended at 10K and 20K. But the <#switch "${lead.deal.plannedServiceType?lower_case}"><#case "toyo_5k_new">5k<#break><#case "toyo_25k_new">25k<#break></#switch> Service also includes services such as tire rotation, fluid level adjustment, and brake inspection and won't cost you anything.
 
 	 END_BODY
 END_TEMPLATE
@@ -3061,7 +3061,7 @@ START_TEMPLATE TOYOTA_CARE_PLAN_DOCUMENTATION
     END_ATTR
 	START_BODY
 
-        The Toyota Care service comes with the vehicle purchase, is connected to the vehicle serial number. There is no additional documentation needed.
+        The Toyota Care service comes with the vehicleDTO purchase, is connected to the vehicleDTO serial number. There is no additional documentation needed.
 
 	END_BODY
 END_TEMPLATE
@@ -3127,7 +3127,7 @@ START_TEMPLATE HONDA_PASS_PLAN_DOCUMENTATION_TEMP
     END_ATTR
 	START_BODY
 
-        The Honda Service Pass comes with the vehicle purchase, is connected to the vehicle serial number. There is no additional documentation needed.
+        The Honda Service Pass comes with the vehicleDTO purchase, is connected to the vehicleDTO serial number. There is no additional documentation needed.
 
 	END_BODY
 END_TEMPLATE
@@ -3155,7 +3155,7 @@ START_TEMPLATE GENERIC_AN_WHAT_OIL_IS_USED_TEMP
 	END_ATTR
 	START_BODY
 
-        Your vehicle uses synthetic oil which means you can schedule oil changes at extended intervals.
+        Your vehicleDTO uses synthetic oil which means you can schedule oil changes at extended intervals.
 
 	 END_BODY
 END_TEMPLATE
@@ -3693,7 +3693,7 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_1ST_TEMP
   <#case "Time to Plan your Next Oil Change">
   Hello ${lead.contact.firstName},
 
-  This is ${lead.agent.agentFirstName} from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle is due for an engine oil service soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
+  This is ${lead.agent.agentFirstName} from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO is due for an engine oil service soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
 
   Is it OK for me to text you to discuss this further?
 
@@ -3717,7 +3717,7 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_1ST_TEMP
   <#case "Urgent - Oil Change Past Due">
   Hey ${lead.contact.firstName},
 
-  ${lead.agent.agentFirstName} again from ${lead.office.name} (Service Team). You are not going to believe this. Ford Reached out to us for the third time about your ${lead.product.year?c} ${lead.product.model?capitalize}. Perhaps you see the light on your dashboard? In their notes, they have stated your vehicle is OVERDUE for an oil change.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
+  ${lead.agent.agentFirstName} again from ${lead.office.name} (Service Team). You are not going to believe this. Ford Reached out to us for the third time about your ${lead.product.year?c} ${lead.product.model?capitalize}. Perhaps you see the light on your dashboard? In their notes, they have stated your vehicleDTO is OVERDUE for an oil change.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
 
   Would it be fine for us to discuss this via text?
 
@@ -3763,7 +3763,7 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_1ST_TEMP
   <#case "Service Engine Soon">
        Hi ${lead.contact.firstName},
 
-       ${lead.agent.agentFirstName} here from Service Dept @ ${lead.office.name}. I just got a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle's engine will require servicing soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
+       ${lead.agent.agentFirstName} here from Service Dept @ ${lead.office.name}. I just got a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO's engine will require servicing soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
 
        Are you OK with me texting you so we can go over this?
 
@@ -3792,7 +3792,7 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_1ST_TEMP
   <#break>
   <#case "Vehicle Maintenance Is Due Soon">
        Hi ${lead.contact.firstName},
-       ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle is due for maintenance soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
+       ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO is due for maintenance soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
        Is it Okay for me to text you to discuss this further?
 
        Prefiere Espanol?
@@ -3802,7 +3802,7 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_1ST_TEMP
   <#break>
   <#case "Oil Change and Regular Maintenance Needed">
        Hello ${lead.contact.firstName},
-       ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle needs Oil Change and Regular Maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
+       ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO needs Oil Change and Regular Maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
        Is it OK for me to text you to discuss this further?
 
        Prefiere Espanol?
@@ -3812,7 +3812,7 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_1ST_TEMP
   <#break>
   <#case "Reminder: Vehicle Maintenance Is Due">
        Hi ${lead.contact.firstName},
-       ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle is due for maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
+       ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO is due for maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch>
        Is it Okay for me to text you to discuss this further?
 
        Prefiere Espanol?
@@ -3835,18 +3835,18 @@ START_TEMPLATE FORD_ERROR_ALERT_NRTA_2ND_TEMP
     START_BODY
 
         Thanks, ${lead.contact.firstName}. <#switch "${lead.warning}">
-            <#case "Time to Plan your Next Oil Change">According to the notes, it looks like your vehicle is due for an engine oil and filter change soon.<#break>
+            <#case "Time to Plan your Next Oil Change">According to the notes, it looks like your vehicleDTO is due for an engine oil and filter change soon.<#break>
             <#case "Oil Change Required">It seems like your engine oil-life is fully used, and it needs to be changed immediately, it is crucial to change the engine oil to maintain the engine's performance and longevity.<#break>
-            <#case "Urgent - Oil Change Past Due">It seems like your vehicle is overdue for an oil change. Regular  Oil change intervals are crucial to keeping your  engine in peak condition and avoiding potential issues related to oil breakdown.<#break>
+            <#case "Urgent - Oil Change Past Due">It seems like your vehicleDTO is overdue for an oil change. Regular  Oil change intervals are crucial to keeping your  engine in peak condition and avoiding potential issues related to oil breakdown.<#break>
             <#case "Change Engine Oil Soon">It seems like you have 5% or less oil-life remaining. Regular Oil change intervals are  essential to, reducing wear and tear, and ensuring your engine's overall health.<#break>
-            <#case "Time to plan your next recommended service">Based on your mileage, it’s time to plan for your next recommended service to keep your vehicle running at its best. Perhaps you see the light on your dashboard?<#break>
-            <#case "Perform recommended service soon">Based on your mileage, it’s time to plan for your next recommended service to keep your vehicle running at its best. Perhaps you see the light on your dashboard?<#break>
-            <#case "Service Engine Soon">Like I said, It seems like your vehicle engine will require servicing soon.<#break>
+            <#case "Time to plan your next recommended service">Based on your mileage, it’s time to plan for your next recommended service to keep your vehicleDTO running at its best. Perhaps you see the light on your dashboard?<#break>
+            <#case "Perform recommended service soon">Based on your mileage, it’s time to plan for your next recommended service to keep your vehicleDTO running at its best. Perhaps you see the light on your dashboard?<#break>
+            <#case "Service Engine Soon">Like I said, It seems like your vehicleDTO engine will require servicing soon.<#break>
             <#case "Recommended service required">I got a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize} thats due for the recommended service maintenance. Ford recommends service at every 7500 miles to 10000 miles or every 6 to 12 months, whichever comes first.<#break>
             <#case "Possible Tire Leak Detected">I received a notification from Ford for your ${lead.product.year?c} ${lead.product.model?capitalize} It seems like a possible tire leak has been detected.<#break>
-            <#case "Vehicle Maintenance Is Due Soon">We received a notification from Ford that based on your vehicle's mileage, it's time for your next recommended maintenance service.<#break>
-            <#case "Reminder: Vehicle Maintenance Is Due">We received a notification from Ford that based on your vehicle's mileage, your next recommended maintenance service is due.<#break>
-            <#case "Oil Change and Regular Maintenance Needed">We received a notification from Ford that your vehicle's connected data indicates it's time for recommended services, including oil change.<#break>
+            <#case "Vehicle Maintenance Is Due Soon">We received a notification from Ford that based on your vehicleDTO's mileage, it's time for your next recommended maintenance service.<#break>
+            <#case "Reminder: Vehicle Maintenance Is Due">We received a notification from Ford that based on your vehicleDTO's mileage, your next recommended maintenance service is due.<#break>
+            <#case "Oil Change and Regular Maintenance Needed">We received a notification from Ford that your vehicleDTO's connected data indicates it's time for recommended services, including oil change.<#break>
            </#switch>
            <#switch "${lead.warning}">
                  <#case "Possible Tire Leak Detected"> Would you like to get it checked at the service center?<#break>
@@ -3869,7 +3869,7 @@ START_TEMPLATE FORD_ERROR_ALERT_RTA_1ST_TEMP
           <#case "Time to Plan your Next Oil Change">
                 Hi ${lead.contact.firstName},
 
-                This is ${lead.agent.agentFirstName} from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle’s engine oil will require servicing soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
+                This is ${lead.agent.agentFirstName} from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO’s engine oil will require servicing soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
                 ${lead.agent.agentFirstName} ${lead.agent.agentLastName}.
           <#break>
           <#case "Oil Change Required">
@@ -3879,7 +3879,7 @@ START_TEMPLATE FORD_ERROR_ALERT_RTA_1ST_TEMP
           <#break>
           <#case "Urgent - Oil Change Past Due">
               Hi ${lead.contact.firstName},
-              ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). You are not going to believe this. Ford Reached out to us for the third time about your ${lead.product.year?c} ${lead.product.model?capitalize}. In their notes, they have clearly Stated your vehicle is OVERDUE for an oil change.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
+              ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). You are not going to believe this. Ford Reached out to us for the third time about your ${lead.product.year?c} ${lead.product.model?capitalize}. In their notes, they have clearly Stated your vehicleDTO is OVERDUE for an oil change.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
 
               ${lead.agent.agentFirstName} ${lead.agent.agentLastName}.
           <#break>
@@ -3905,7 +3905,7 @@ START_TEMPLATE FORD_ERROR_ALERT_RTA_1ST_TEMP
           <#break>
           <#case "Service Engine Soon">
                 Hi ${lead.contact.firstName},
-                This is ${lead.agent.agentFirstName} from ${lead.office.name} (Service Dept). I just got a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle's engine will require servicing soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
+                This is ${lead.agent.agentFirstName} from ${lead.office.name} (Service Dept). I just got a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO's engine will require servicing soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
                 ${lead.agent.agentFirstName} ${lead.agent.agentLastName}.
           <#break>
           <#case "Possible Tire Leak Detected">
@@ -3922,17 +3922,17 @@ START_TEMPLATE FORD_ERROR_ALERT_RTA_1ST_TEMP
           <#break>
           <#case "Vehicle Maintenance Is Due Soon">
                 Hi ${lead.contact.firstName},
-                ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle is due for maintenance soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
+                ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO is due for maintenance soon.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
                 ${lead.agent.agentFirstName} ${lead.agent.agentLastName}.
           <#break>
           <#case "Reminder: Vehicle Maintenance Is Due">
                 Hi ${lead.contact.firstName},
-                ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from Ford about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle is due for maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
+                ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from Ford about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO is due for maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
                 ${lead.agent.agentFirstName} ${lead.agent.agentLastName}.
           <#break>
           <#case "Oil Change and Regular Maintenance Needed">
                 Hello ${lead.contact.firstName},
-                ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicle needs Oil Change and Regular Maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
+                ${lead.agent.agentFirstName} here from ${lead.office.name} (Service Dept). I just received a notification from the Ford Alert System about your ${lead.product.year?c} ${lead.product.model?capitalize}. I was reading the notes and it seems like your vehicleDTO needs Oil Change and Regular Maintenance.<#switch "${lead.deal.vcpApplicable}"><#case "YES"> I see you have ${lead.deal.vcpRemainingCount} available on your AutoNation Vehicle Care (exp ${lead.deal.vcpExpireDate}), So it wont cost you.<#break><#case "NO"><#break></#switch> Would you like me to schedule this for you, ${lead.contact.firstName}.
                 ${lead.agent.agentFirstName} ${lead.agent.agentLastName}.
           <#break>
         </#switch>
@@ -4075,7 +4075,7 @@ START_TEMPLATE AUTONATION_TOYOTACARE_NATIONWIDE_TEMP
 	END_ATTR
     START_BODY
 
-        We were looking forward to seeing you again, but if our dealership is out of the way, keep in mind that the service is complimentary at any Toyota dealership nationwide. Thank you for purchasing your vehicle from ${lead.office.name} and have a great day!
+        We were looking forward to seeing you again, but if our dealership is out of the way, keep in mind that the service is complimentary at any Toyota dealership nationwide. Thank you for purchasing your vehicleDTO from ${lead.office.name} and have a great day!
 
     END_BODY
 END_TEMPLATE
@@ -4089,7 +4089,7 @@ START_TEMPLATE AUTONATION_HONDACARE_NATIONWIDE_TEMP
 	END_ATTR
     START_BODY
 
-        We were looking forward to seeing you again, but if our dealership is out of the way, keep in mind that the service is complimentary at any Honda dealership nationwide. Thank you for purchasing your vehicle from ${lead.office.name} and have a great day!
+        We were looking forward to seeing you again, but if our dealership is out of the way, keep in mind that the service is complimentary at any Honda dealership nationwide. Thank you for purchasing your vehicleDTO from ${lead.office.name} and have a great day!
 
     END_BODY
 END_TEMPLATE
@@ -4160,8 +4160,8 @@ START_TEMPLATE TOYOTA_ERROR_ALERT_NRTA_1ST_TEMP
             <#case "ABSW">It seems like there is a malfunction in the Anti-Lock Brake System or brake assist system. This could be dangerous in certain conditions.<#break>
             <#case "VSCW">It seems like there is a malfunction in the VSC, TRAC, or hill-start assist control system, do not rely on this system until inspected.<#break>
             <#case "FWSW">It seems like there is a malfunction in the Dynamic Rear Steering System.<#break>
-            <#case "OMPW">It seems like the vehicle engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
-            <#case "OMDW">It seems like the vehicle engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
+            <#case "OMPW">It seems like the vehicleDTO engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
+            <#case "OMDW">It seems like the vehicleDTO engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
             <#case "MCMW">It seems like there is a malfunction in the Secondary Crash Mitigation Support Brake System.<#break>
             <#case "VPNW">It seems like there is a malfunction in the Vehicle Proximity Notification System.<#break>
             <#case "OPW">It seems like the engine oil pressure is low, continuing to drive may be dangerous.<#break>
@@ -4183,7 +4183,7 @@ START_TEMPLATE TOYOTA_ERROR_ALERT_NRTA_1ST_TEMP
             <#case "LKAW">It seems like there is a malfunction in the Lane-Keeping Assist System, do not rely on this system until inspected.<#break>
             <#case "DABW">It seems like there is a malfunction in the Driver-assist Braking Control System.<#break>
             <#case "METPCSW">It seems like there is a malfunction in the Pre-Collision System, do not rely on this system until inspected.<#break>
-            <#case "WTPW">I was reading the notes and It seems like your vehicle engine is overheating, continuing to drive may be dangerous.<#break>
+            <#case "WTPW">I was reading the notes and It seems like your vehicleDTO engine is overheating, continuing to drive may be dangerous.<#break>
             <#case "ASTW">It seems like there is a malfunction in the Active Stabilizer Suspension System, do not rely on this system.<#break>
             <#case "HVSW">It seems like there is a malfunction in the Hybrid System.<#break>
             <#case "MIHW">I was reading the notes and It seems like Hybrid System is overheating.<#break>
@@ -4198,7 +4198,7 @@ START_TEMPLATE TOYOTA_ERROR_ALERT_NRTA_1ST_TEMP
             <#case "MTPW">It seems like there is a malfunction in the Convertible Roof System.<#break>
             <#case "SMBW">It seems like there is a malfunction in the Automatic High Beam System, this could be dangerous in certain driving conditions.<#break>
             <#case "KDSW">It seems like there is a malfunction in the Kinetic Dynamic Suspension System.<#break>
-            <#case "OMRW">I was reading the notes and It seems like your vehicle requires maintainance. Do you see the notification on your dashboard?<#break>
+            <#case "OMRW">I was reading the notes and It seems like your vehicleDTO requires maintainance. Do you see the notification on your dashboard?<#break>
             <#case "SMTW">It seems like there is a malfunction in the Transmission System, are you experiencing any issues?<#break>
             <#case "OCW">It seems like there is a malfunction in the ATF (Automatic Transmission Fluid) Cooler.<#break>
             <#case "FCTW">It seems like there is a malfunction in the Active Rear Wing System.<#break>
@@ -4297,8 +4297,8 @@ START_TEMPLATE TOYOTA_ERROR_ALERT_RTA_1ST_TEMP
             <#case "ABSW">It seems like there is a malfunction in the Anti-Lock Brake System or brake assist system. This could be dangerous in certain conditions.<#break>
             <#case "VSCW">It seems like there is a malfunction in the VSC, TRAC, or hill-start assist control system, do not rely on this system until inspected.<#break>
             <#case "FWSW">It seems like there is a malfunction in the Dynamic Rear Steering System.<#break>
-            <#case "OMPW">It seems like the vehicle engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
-            <#case "OMDW">It seems like the vehicle engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
+            <#case "OMPW">It seems like the vehicleDTO engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
+            <#case "OMDW">It seems like the vehicleDTO engine oil maintenance is required soon. Do you see the notification on your dashboard?<#break>
             <#case "MCMW">It seems like there is a malfunction in the Secondary Crash Mitigation Support Brake System.<#break>
             <#case "VPNW">It seems like there is a malfunction in the Vehicle Proximity Notification System.<#break>
             <#case "OPW">It seems like the engine oil pressure is low, continuing to drive may be dangerous.<#break>
@@ -4320,7 +4320,7 @@ START_TEMPLATE TOYOTA_ERROR_ALERT_RTA_1ST_TEMP
             <#case "LKAW">It seems like there is a malfunction in the Lane-Keeping Assist System, do not rely on this system until inspected.<#break>
             <#case "DABW">It seems like there is a malfunction in the Driver-assist Braking Control System.<#break>
             <#case "METPCSW">It seems like there is a malfunction in the Pre-Collision System, do not rely on this system until inspected.<#break>
-            <#case "WTPW">I was reading the notes and It seems like your vehicle engine is overheating, continuing to drive may be dangerous.<#break>
+            <#case "WTPW">I was reading the notes and It seems like your vehicleDTO engine is overheating, continuing to drive may be dangerous.<#break>
             <#case "ASTW">It seems like there is a malfunction in the Active Stabilizer Suspension System, do not rely on this system.<#break>
             <#case "HVSW">It seems like there is a malfunction in the Hybrid System.<#break>
             <#case "MIHW">I was reading the notes and It seems like Hybrid System is overheating.<#break>
@@ -4335,7 +4335,7 @@ START_TEMPLATE TOYOTA_ERROR_ALERT_RTA_1ST_TEMP
             <#case "MTPW">It seems like there is a malfunction in the Convertible Roof System.<#break>
             <#case "SMBW">It seems like there is a malfunction in the Automatic High Beam System, this could be dangerous in certain driving conditions.<#break>
             <#case "KDSW">It seems like there is a malfunction in the Kinetic Dynamic Suspension System.<#break>
-            <#case "OMRW">I was reading the notes and It seems like your vehicle requires maintainance. Do you see the notification on your dashboard?<#break>
+            <#case "OMRW">I was reading the notes and It seems like your vehicleDTO requires maintainance. Do you see the notification on your dashboard?<#break>
             <#case "SMTW">It seems like there is a malfunction in the Transmission System, are you experiencing any issues?<#break>
             <#case "OCW">It seems like there is a malfunction in the ATF (Automatic Transmission Fluid) Cooler.<#break>
             <#case "FCTW">It seems like there is a malfunction in the Active Rear Wing System.<#break>
@@ -4391,7 +4391,7 @@ START_TEMPLATE AN_FORD_CUSTOMER_A_PERFORM_SERVICE_BY_OWN
 	END_ATTR
 	START_BODY
 
-        I understand that you prefer to do the maintenance on your own. However, every auto model has its particular quirks. Mechanics at Ford dealers are well-versed in how Ford vehicles are made and have specific knowledge of common issues or quirks of your ${lead.product.year?c} ${lead.product.model?capitalize}.
+        I understand that you prefer to do the maintenance on your own. However, every auto model has its particular quirks. Mechanics at Ford dealers are well-versed in how Ford vehicleDTOS are made and have specific knowledge of common issues or quirks of your ${lead.product.year?c} ${lead.product.model?capitalize}.
 
     END_BODY
 END_TEMPLATE
@@ -4419,7 +4419,7 @@ START_TEMPLATE GENERIC_OILCHANGE_CUSTOMER_A_PERFORM_SERVICE_OILCHANGE_15k
 	END_ATTR
 	START_BODY
 
-        Yes, the ToyotaCare includes oil change. If your vehicle uses Synthetic oil, this is recommended at 10K and 20K. But the 15K Service also includes services such as tire rotation, fluid level adjustment, and brake inspection and won't cost you anything. Let me know if you would like to set up an appointment.
+        Yes, the ToyotaCare includes oil change. If your vehicleDTO uses Synthetic oil, this is recommended at 10K and 20K. But the 15K Service also includes services such as tire rotation, fluid level adjustment, and brake inspection and won't cost you anything. Let me know if you would like to set up an appointment.
 
     END_BODY
 END_TEMPLATE

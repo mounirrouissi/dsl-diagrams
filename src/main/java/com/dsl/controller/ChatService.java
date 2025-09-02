@@ -108,37 +108,37 @@ public class ChatService {
     }
     
     private String handleVehicleInfo(UserContext context, Map<String, String> entities) {
-        Vehicle vehicle = context.getVehicle();
-        if (vehicle == null) {
-            vehicle = new Vehicle();
-            context.setVehicle(vehicle);
+        VehicleDTO vehicleDTO = context.getVehicle();
+        if (vehicleDTO == null) {
+            vehicleDTO = new VehicleDTO();
+            context.setVehicle(vehicleDTO);
         }
         
         // Extract vehicle information from entities
         if (entities.containsKey("vehicle_make")) {
-            vehicle.setMake(entities.get("vehicle_make"));
+            vehicleDTO.setMake(entities.get("vehicle_make"));
         }
         if (entities.containsKey("vehicle_model")) {
-            vehicle.setModel(entities.get("vehicle_model"));
+            vehicleDTO.setModel(entities.get("vehicle_model"));
         }
         if (entities.containsKey("vehicle_year")) {
             try {
-                vehicle.setYear(Integer.parseInt(entities.get("vehicle_year")));
+                vehicleDTO.setYear(Integer.parseInt(entities.get("vehicle_year")));
             } catch (NumberFormatException e) {
                 // Handle invalid year
             }
         }
-        
+
         context.setConversationState("vehicle_provided");
         
-        if (vehicle.getMake() != null && vehicle.getModel() != null && vehicle.getYear() != null) {
-            return String.format("Great! I have your %d %s %s on file. What service do you need today?", 
-                vehicle.getYear(), vehicle.getMake(), vehicle.getModel());
+        if (vehicleDTO != null && vehicleDTO.getMake() != null && vehicleDTO.getModel() != null && vehicleDTO.getYear() != null) {
+            return String.format("Great! I have your %d %s %s on file. What service do you need today?",
+                vehicleDTO.getYear(), vehicleDTO.getMake(), vehicleDTO.getModel());
         } else {
             return "I need a bit more information about your vehicle. Could you tell me the make, model, and year? For example: '2020 Honda Civic'";
         }
     }
-    
+
     private String handleServiceInquiry(UserContext context, Map<String, String> entities) {
         String service = entities.get("service_type");
         if (service != null) {
@@ -163,11 +163,16 @@ public class ChatService {
     private String handleConfirmation(UserContext context, Map<String, String> entities) {
         if ("booking_appointment".equals(context.getConversationState())) {
             context.setConversationState("appointment_confirmed");
-            return String.format("Perfect! I've scheduled your %s appointment for your %d %s %s. You'll receive a confirmation text shortly. Is there anything else I can help you with?",
-                context.getCurrentService(),
-                context.getVehicle().getYear(),
-                context.getVehicle().getMake(),
-                context.getVehicle().getModel());
+            
+            if (context.getVehicle() != null && context.getCurrentService() != null) {
+                return String.format("Perfect! I've scheduled your %s appointment for your %s %s %s. You'll receive a confirmation text shortly. Is there anything else I can help you with?",
+                    context.getCurrentService(),
+                    context.getVehicle().getYear() != null ? context.getVehicle().getYear().toString() : "",
+                    context.getVehicle().getMake() != null ? context.getVehicle().getMake() : "",
+                    context.getVehicle().getModel() != null ? context.getVehicle().getModel() : "");
+            } else {
+                return "Perfect! I've scheduled your appointment. You'll receive a confirmation text shortly. Is there anything else I can help you with?";
+            }
         }
         
         return "Thank you for confirming! Is there anything else I can help you with today?";

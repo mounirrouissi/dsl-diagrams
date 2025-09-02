@@ -1,27 +1,20 @@
 package com.dsl.controller;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.Map;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class NLPResult {
     private String intent;
     private Map<String, String> entities;
     private double confidence;
-    
-    public NLPResult() {}
-    
-    public NLPResult(String intent, Map<String, String> entities, double confidence) {
-        this.intent = intent;
-        this.entities = entities;
-        this.confidence = confidence;
-    }
-    
-    // Getters and setters
-    public String getIntent() { return intent; }
-    public void setIntent(String intent) { this.intent = intent; }
-    
-    public Map<String, String> getEntities() { return entities; }
-    public void setEntities(Map<String, String> entities) { this.entities = entities; }
-    
-    public double getConfidence() { return confidence; }
-    public void setConfidence(double confidence) { this.confidence = confidence; }
+    private String sentiment;
+    private Map<String, Double> intentConfidences;
+    private boolean requiresHumanHandoff;
+    private String suggestedResponse;
 }

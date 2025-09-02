@@ -1,27 +1,25 @@
 package com.dsl.controller;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserContext {
     private Long customerId;
     private String customerName;
-    private Vehicle vehicle;
+    private VehicleDTO vehicle;
     private String currentService;
     private String conversationState;
-    
-    public UserContext() {}
-    
-    // Getters and setters
-    public Long getCustomerId() { return customerId; }
-    public void setCustomerId(Long customerId) { this.customerId = customerId; }
-    
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
-    
-    public Vehicle getVehicle() { return vehicle; }
-    public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
-    
-    public String getCurrentService() { return currentService; }
-    public void setCurrentService(String currentService) { this.currentService = currentService; }
-    
-    public String getConversationState() { return conversationState; }
-    public void setConversationState(String conversationState) { this.conversationState = conversationState; }
+    private LocalDateTime lastInteraction;
+    private Map<String, Object> sessionData = new HashMap<>();
+    private int messageCount = 0;
+    private String preferredLanguage = "en";
+    private boolean isReturningCustomer = false;
 }

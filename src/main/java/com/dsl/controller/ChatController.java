@@ -69,6 +69,16 @@ public class ChatController {
         }
     }
 
+    @PostMapping("/analyze")
+    public ResponseEntity<NLPResult> analyzeMessage(@RequestBody AnalyzeMessageRequest request) {
+        try {
+            NLPResult result = nlpService.processMessage(request.getMessage(), request.getContext());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Chat service is running");
@@ -85,6 +95,21 @@ class ContextUpdateRequest {
     // Getters and setters
     public String getSessionId() { return sessionId; }
     public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+    
+    public UserContext getContext() { return context; }
+    public void setContext(UserContext context) { this.context = context; }
+}
+
+// Additional DTO for message analysis
+class AnalyzeMessageRequest {
+    private String message;
+    private UserContext context;
+    
+    public AnalyzeMessageRequest() {}
+    
+    // Getters and setters
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
     
     public UserContext getContext() { return context; }
     public void setContext(UserContext context) { this.context = context; }
