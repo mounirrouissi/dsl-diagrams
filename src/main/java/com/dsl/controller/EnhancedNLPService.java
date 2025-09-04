@@ -25,7 +25,7 @@ public class EnhancedNLPService {
         // Always use Stanford NLP for enhancement (hybrid approach)
         try {
             NLPResult enhancedResult = enhanceWithStanfordNLP(message, basicResult, context);
-            enhancedResult.setProcessingMethod("hy  brid");
+            enhancedResult.setProcessingMethod("hybrid");
             return enhancedResult;
         } catch (Exception e) {
             System.err.println("Stanford NLP enhancement failed, falling back to basic result: " + e.getMessage());
