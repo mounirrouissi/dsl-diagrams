@@ -1,10 +1,7 @@
 package com.dsl.service;
 
-
-
 import com.dsl.controller.*;
 import com.dsl.entity.*;
-
 import com.dsl.repository.*;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +35,18 @@ public class DatabaseChatService {
     private ServiceHistoryRepository serviceHistoryRepository;
     
 
-    private NLPService nlpService;
+    @Autowired
+    private EnhancedNLPService enhancedNLPService;
 
     public DatabaseChatService() {
+    }
+    
+    public ChatMessageResponse processMessage(String sessionId, String userMessage, UserContext context) {
+        // Use enhanced NLP service for processing
+        NLPResult nlpResult = enhancedNLPService.processMessage(userMessage, context);
+        
+        // Generate response using the NLP result
+        return generateResponse(sessionId, userMessage, nlpResult, context);
     }
 
     public ChatMessageResponse generateResponse(String sessionId, String userMessage, NLPResult nlpResult,
@@ -96,8 +102,32 @@ public class DatabaseChatService {
                 responseMessage = handleConfirmation(updatedContext, entities, session);
                 break;
                 
+            case "emergency":
+                responseMessage = handleEmergency(updatedContext, entities, session, userMessage);
+                quickReplies = getEmergencyQuickReplies();
+                break;
+                
+            case "complaint":
+                responseMessage = handleComplaint(updatedContext, entities, session);
+                quickReplies = getComplaintQuickReplies();
+                break;
+                
+            case "tire_assistance":
+                responseMessage = handleTireAssistance(updatedContext, entities, session, userMessage);
+                quickReplies = getTireAssistanceQuickReplies();
+                break;
+                
+            case "oil_assistance":
+                responseMessage = handleOilAssistance(updatedContext, entities, session, userMessage);
+                quickReplies = getOilAssistanceQuickReplies();
+                break;
+                
+            case "confirmation":
+                responseMessage = handleConfirmation(updatedContext, entities, session);
+                break;
+                
             default:
-                responseMessage = handleDefault(updatedContext);
+                responseMessage = handleDefault(updatedContext, userMessage);
                 quickReplies = getDefaultQuickReplies();
         }
         
@@ -312,7 +342,9 @@ public class DatabaseChatService {
     }
     
     private String handleConfirmation(UserContext context, Map<String, String> entities, ChatSession session) {
-        if ("booking_appointment".equals(context.getConversationState())) {
+        String conversationState = context.getConversationState();
+        
+        if ("booking_appointment".equals(conversationState)) {
             // Create the appointment
             if (session.getCustomer() != null && context.getVehicle() != null && context.getCurrentService() != null) {
                 try {
@@ -324,13 +356,325 @@ public class DatabaseChatService {
                     return "I'm sorry, there was an issue scheduling your appointment. Let me try again or you can call us directly.";
                 }
             }
+        } else if ("battery_issue_diagnosed".equals(conversationState)) {
+            // User confirmed they want roadside assistance
+            if (context.getCurrentLocation() != null) {
+                context.setConversationState("roadside_dispatched");
+                return String.format("Great! ✅ I've dispatched roadside assistance to %s. The nearest technician is about 15 minutes away. " +
+                    "Would you like me to also check if your battery needs replacement while they're there?", 
+                    context.getCurrentLocation());
+            } else {
+                return "I'll be happy to send roadside assistance. Can you please share your current location?";
+            }
+        } else if ("roadside_dispatched".equals(conversationState)) {
+            // User confirmed they want battery check
+            context.setConversationState("full_service_scheduled");
+            return "Perfect! I've noted that for a battery replacement check. You'll receive a text update when the technician is on the way. " +
+                   "For your safety, please stay inside your vehicle with hazard lights on. 🚨 " +
+                   "I'll stay connected and update you every 5 minutes until help arrives.";
         }
         
         return "Thank you for confirming! Is there anything else I can help you with today?";
     }
     
+    private String handleEmergency(UserContext context, Map<String, String> entities, ChatSession session, String userMessage) {
+        context.setConversationState("emergency_mode");
+        context.setEmergencyMode(true);
+        
+        // Analyze the emergency type and symptoms
+        String emergencyType = analyzeEmergencyType(userMessage);
+        String location = entities.get("location");
+        String symptom = entities.get("car_symptom");
+        
+        StringBuilder response = new StringBuilder();
+        
+        if (emergencyType.equals("wont_start")) {
+            response.append("I'm sorry to hear that your car won't start and you're stuck. Let me help you right away. ");
+            
+            // Check for specific symptoms mentioned
+            if (symptom != null && symptom.toLowerCase().contains("click")) {
+                response.append("You mentioned it clicks - that usually indicates a weak or dead battery. ");
+                context.setConversationState("battery_issue_diagnosed");
+                context.setEmergencyType("battery_dead");
+            } else if (userMessage.toLowerCase().contains("click")) {
+                response.append("Thank you, that clicking sound usually indicates a weak or dead battery. ");
+                context.setConversationState("battery_issue_diagnosed");
+                context.setEmergencyType("battery_dead");
+            } else {
+                response.append("Could you tell me if the car makes any sound when you try to start it? ");
+                context.setConversationState("diagnosing_startup_issue");
+            }
+        } else if (emergencyType.equals("breakdown")) {
+            response.append("I understand you're having car trouble and are stranded. I'm here to help get you back on the road safely. ");
+            context.setConversationState("diagnosing_breakdown");
+        } else {
+            response.append("I can see this is urgent. Let me get you the help you need right away. ");
+        }
+        
+        // Handle location information
+        if (location != null) {
+            response.append(String.format("Got it ✅. I've pinned your location at %s. ", location));
+            context.setCurrentLocation(location);
+            
+            if ("battery_issue_diagnosed".equals(context.getConversationState())) {
+                response.append("The nearest technician is about 15 minutes away. Would you like me to also check if your battery needs replacement while they're there?");
+                context.setConversationState("roadside_dispatched");
+            }
+        } else if ("battery_issue_diagnosed".equals(context.getConversationState())) {
+            response.append("I can send roadside assistance to jump-start your car. Can you share your current location so I can dispatch help?");
+        }
+        
+        return response.toString();
+    }
+    
+    private String handleComplaint(UserContext context, Map<String, String> entities, ChatSession session) {
+        context.setConversationState("handling_complaint");
+        
+        return "I understand your concern and I sincerely apologize for any inconvenience. Your satisfaction is very important to us. " +
+               "Let me connect you with a specialist who can address this issue properly and make things right. " +
+               "In the meantime, could you please provide more details about what happened?";
+    }
+    
+    private String handleTireAssistance(UserContext context, Map<String, String> entities, ChatSession session, String userMessage) {
+        context.setConversationState("tire_assistance");
+        context.setCurrentService("tire_assistance");
+        
+        String tireIssue = entities.get("tire_issue");
+        String carProblem = entities.get("car_problem");
+        String location = entities.get("location");
+        
+        StringBuilder response = new StringBuilder();
+        
+        // Analyze the specific tire problem
+        String lowerMessage = userMessage.toLowerCase();
+        
+        if (lowerMessage.contains("flat") || lowerMessage.contains("wheel")) {
+            response.append("Got it — sounds like you have a flat tire. ");
+            context.setEmergencyType("flat_tire");
+            
+            if (lowerMessage.contains("nail") || lowerMessage.contains("hit")) {
+                response.append("You mentioned hitting something - that's likely a puncture. ");
+                context.setConversationState("punctured_tire");
+            }
+            
+            if (lowerMessage.contains("can't move") || lowerMessage.contains("won't move")) {
+                response.append("Since your car can't move, I'll prioritize this as urgent. ");
+                context.setEmergencyMode(true);
+            }
+            
+            response.append("Do you have a spare tire available, or would you like us to bring one?");
+            
+        } else if (lowerMessage.contains("nail")) {
+            response.append("Understood. That's a punctured tire from road debris. ");
+            response.append("I can send a technician to replace it or inflate it temporarily. Where are you located?");
+            context.setConversationState("punctured_tire");
+            
+        } else if (lowerMessage.contains("fix") || lowerMessage.contains("repair")) {
+            response.append("Yes, I can arrange tire assistance. ");
+            response.append("Could you confirm if the tire needs a full replacement or just air?");
+            context.setConversationState("tire_diagnosis_needed");
+            
+        } else {
+            response.append("I can help with your tire issue. ");
+            response.append("Could you tell me more about what's wrong with the tire?");
+            context.setConversationState("tire_diagnosis_needed");
+        }
+        
+        // Handle location if provided
+        if (location != null) {
+            context.setCurrentLocation(location);
+            response.append(String.format(" I have your location as %s.", location));
+        }
+        
+        return response.toString();
+    }
+    
+    private String handleOilAssistance(UserContext context, Map<String, String> entities, ChatSession session, String userMessage) {
+        context.setConversationState("oil_assistance");
+        context.setCurrentService("oil_assistance");
+        
+        String oilIssue = entities.get("oil_issue");
+        String location = entities.get("location");
+        
+        StringBuilder response = new StringBuilder();
+        
+        // Analyze the specific oil problem
+        String lowerMessage = userMessage.toLowerCase();
+        
+        if (lowerMessage.contains("oil light")) {
+            response.append("Thanks for letting me know. That oil light means your engine oil is low. ");
+            response.append("I can send oil delivery and refill service. Would you like me to arrange that now?");
+            context.setConversationState("oil_light_on");
+            
+        } else if (lowerMessage.contains("out of oil") || lowerMessage.contains("empty")) {
+            response.append("Of course. I'll send a technician with engine oil to top up your car so you can drive safely again. ");
+            response.append("Can you share your location?");
+            context.setConversationState("oil_empty");
+            context.setEmergencyMode(true); // Empty oil is urgent
+            
+        } else if (lowerMessage.contains("engine fluids")) {
+            response.append("Yes, we provide oil assistance. If your oil is low or empty, we can deliver and refill it for you. ");
+            response.append("Is that what you need right now?");
+            context.setConversationState("oil_service_inquiry");
+            
+        } else if (lowerMessage.contains("low oil")) {
+            response.append("I can help with low oil. We'll send someone to check your oil level and top it up if needed. ");
+            response.append("Where are you located?");
+            context.setConversationState("oil_low");
+            
+        } else {
+            response.append("I can help with oil-related services. ");
+            response.append("Could you tell me more about the oil issue you're experiencing?");
+            context.setConversationState("oil_diagnosis_needed");
+        }
+        
+        // Handle location if provided
+        if (location != null) {
+            context.setCurrentLocation(location);
+            response.append(String.format(" I have your location as %s.", location));
+        }
+        
+        return response.toString();
+    }
+    
+    private String handleConfirmation(UserContext context, Map<String, String> entities, ChatSession session) {
+        String conversationState = context.getConversationState();
+        
+        if ("booking_appointment".equals(conversationState)) {
+            // Create the appointment
+            if (session.getCustomer() != null && context.getVehicle() != null && context.getCurrentService() != null) {
+                try {
+                    createAppointment(session.getCustomer(), context);
+                    context.setConversationState("appointment_confirmed");
+                    return String.format("Perfect! I've scheduled your %s appointment for your %s. You'll receive a confirmation shortly. Is there anything else I can help you with?",
+                        context.getCurrentService(), getVehicleDisplayName(context.getVehicle()));
+                } catch (Exception e) {
+                    return "I'm sorry, there was an issue scheduling your appointment. Let me try again or you can call us directly.";
+                }
+            }
+        } else if ("battery_issue_diagnosed".equals(conversationState)) {
+            // User confirmed they want roadside assistance
+            if (context.getCurrentLocation() != null) {
+                context.setConversationState("roadside_dispatched");
+                return String.format("Great! ✅ I've dispatched roadside assistance to %s. The nearest technician is about 15 minutes away. " +
+                    "Would you like me to also check if your battery needs replacement while they're there?", 
+                    context.getCurrentLocation());
+            } else {
+                return "I'll be happy to send roadside assistance. Can you please share your current location?";
+            }
+        } else if ("roadside_dispatched".equals(conversationState)) {
+            // User confirmed they want battery check
+            context.setConversationState("full_service_scheduled");
+            return "Perfect! I've noted that for a battery replacement check. You'll receive a text update when the technician is on the way. " +
+                   "For your safety, please stay inside your vehicle with hazard lights on. 🚨 " +
+                   "I'll stay connected and update you every 5 minutes until help arrives.";
+        } else if ("tire_assistance".equals(conversationState) || "punctured_tire".equals(conversationState)) {
+            // User confirmed tire service
+            if (context.getCurrentLocation() != null) {
+                context.setConversationState("tire_service_dispatched");
+                return String.format("Excellent! I've dispatched a tire technician to %s. They'll arrive in about 20-30 minutes with the necessary equipment. " +
+                    "Please stay safe and keep your hazard lights on if you're on the roadside. 🚨", context.getCurrentLocation());
+            } else {
+                return "Great! I'll arrange tire assistance. Can you please share your current location so I can dispatch help?";
+            }
+        } else if ("oil_assistance".equals(conversationState) || "oil_light_on".equals(conversationState) || "oil_empty".equals(conversationState)) {
+            // User confirmed oil service
+            if (context.getCurrentLocation() != null) {
+                context.setConversationState("oil_service_dispatched");
+                String urgencyNote = "oil_empty".equals(conversationState) ? 
+                    "This is urgent since you're out of oil. " : "";
+                return String.format("Perfect! %sI've arranged oil service to %s. A technician will arrive in 15-25 minutes with fresh engine oil. " +
+                    "Please avoid driving until they arrive to prevent engine damage.", urgencyNote, context.getCurrentLocation());
+            } else {
+                return "Understood! I'll send oil assistance. Can you please share your location so I can dispatch a technician?";
+            }
+        }
+        
+        return "Thank you for confirming! Is there anything else I can help you with today?";
+    }
+    
+    private String analyzeEmergencyType(String message) {
+        String lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.contains("won't start") || lowerMessage.contains("wont start") || 
+            lowerMessage.contains("doesn't start") || lowerMessage.contains("not starting")) {
+            return "wont_start";
+        } else if (lowerMessage.contains("broke down") || lowerMessage.contains("broken down") ||
+                   lowerMessage.contains("stuck") || lowerMessage.contains("stranded")) {
+            return "breakdown";
+        } else if (lowerMessage.contains("accident") || lowerMessage.contains("crash")) {
+            return "accident";
+        } else if (lowerMessage.contains("smoke") || lowerMessage.contains("fire") || 
+                   lowerMessage.contains("burning")) {
+            return "fire_hazard";
+        }
+        
+        return "general_emergency";
+    }
+    
     private String handleDefault(UserContext context) {
+        String conversationState = context.getConversationState();
+        
+        // Emergency mode responses
+        if ("diagnosing_startup_issue".equals(conversationState)) {
+            return "Please let me know what sounds your car makes when you try to start it - this will help me diagnose the issue better.";
+        } else if ("battery_issue_diagnosed".equals(conversationState)) {
+            if (context.getCurrentLocation() != null) {
+                return "I'm ready to send roadside assistance for a jump-start to " + context.getCurrentLocation() + 
+                       ". Should I dispatch them now?";
+            } else {
+                return "I'm ready to send roadside assistance for a jump-start. I just need your location to dispatch help.";
+            }
+        } else if ("roadside_dispatched".equals(conversationState)) {
+            return "Your roadside assistance is on the way! I'll keep you updated. In the meantime, please stay safe in your vehicle with hazard lights on. 🚨";
+        } else if ("full_service_scheduled".equals(conversationState)) {
+            return "Everything is set up! The technician will be there soon and will also check your battery. I'll update you every 5 minutes until they arrive.";
+        } else if ("emergency_mode".equals(conversationState)) {
+            return "I'm still here to help with your emergency. What additional information can you provide?";
+        }
+        
+        // Handle location-only messages during emergency
+        if (context.isEmergencyMode() && context.getCurrentLocation() == null) {
+            // Check if the message might be a location
+            String location = extractLocationFromMessage(userMessage);
+            if (location != null) {
+                context.setCurrentLocation(location);
+                if ("battery_issue_diagnosed".equals(conversationState)) {
+                    return String.format("Got it ✅. I've pinned your location at %s. The nearest technician is about 15 minutes away. " +
+                        "Would you like me to also check if your battery needs replacement while they're there?", location);
+                }
+            }
+            return handlePotentialLocation(context);
+        }
+        
         return "I'm here to help with your automotive needs. You can ask me about services, schedule appointments, or get information about vehicle maintenance. What would you like to know?";
+    }
+    
+    private String extractLocationFromMessage(String message) {
+        // Simple location extraction - look for common location patterns
+        String lowerMessage = message.toLowerCase();
+        
+        // Check for "I'm at/near/on" patterns
+        if (lowerMessage.matches(".*\\b(at|near|on)\\s+.*")) {
+            // Extract everything after the preposition
+            String[] parts = message.split("\\b(?:at|near|on)\\s+", 2);
+            if (parts.length > 1) {
+                return parts[1].trim();
+            }
+        }
+        
+        // Check for street/location keywords
+        if (lowerMessage.contains("street") || lowerMessage.contains("avenue") || 
+            lowerMessage.contains("road") || lowerMessage.contains("station") ||
+            lowerMessage.contains("mall") || lowerMessage.contains("center")) {
+            return message.trim();
+        }
+        
+        return null;
+    }
+    
+    private String handlePotentialLocation(UserContext context) {
+        return "Got it! Let me confirm - are you saying that's your current location? If so, I can dispatch roadside assistance right away.";
     }
     
     // Helper methods
@@ -431,10 +775,47 @@ public class DatabaseChatService {
         );
     }
     
+    private List<QuickReply> getEmergencyQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("It makes clicking sounds"),
+            new QuickReply("No sound at all"),
+            new QuickReply("Engine cranks but won't start"),
+            new QuickReply("Send roadside assistance")
+        );
+    }
+    
+    private List<QuickReply> getComplaintQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("Speak to manager"),
+            new QuickReply("File formal complaint"),
+            new QuickReply("Request refund"),
+            new QuickReply("Schedule callback")
+        );
+    }
+    
+    private List<QuickReply> getTireAssistanceQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("I have a spare tire"),
+            new QuickReply("Please bring a tire"),
+            new QuickReply("Just need air/inflation"),
+            new QuickReply("Send technician now")
+        );
+    }
+    
+    private List<QuickReply> getOilAssistanceQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("Yes, arrange oil service"),
+            new QuickReply("Check oil level first"),
+            new QuickReply("Emergency oil delivery"),
+            new QuickReply("Schedule oil change")
+        );
+    }
+    
     private List<QuickReply> getDefaultQuickReplies() {
         return Arrays.asList(
             new QuickReply("I need car service"),
             new QuickReply("Book appointment"),
+            new QuickReply("Emergency help"),
             new QuickReply("Talk to human")
         );
     }

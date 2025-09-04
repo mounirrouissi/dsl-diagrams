@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -16,12 +18,17 @@ public class ChatController {
     
     @Autowired
     private NLPService nlpService;
+    
+    @Autowired(required = false)
+    private EnhancedNLPService enhancedNLPService;
 
     @PostMapping("/send")
     public ResponseEntity<ChatMessageResponse> sendMessage(@RequestBody ChatMessageRequest request) {
         try {
-            // Process the message through NLP
-            NLPResult nlpResult = nlpService.processMessage(request.getMessage(), request.getContext());
+            // Process the message through NLP (use enhanced if available)
+            NLPResult nlpResult = enhancedNLPService != null ? 
+                enhancedNLPService.processMessage(request.getMessage(), request.getContext()) :
+                nlpService.processMessage(request.getMessage(), request.getContext());
             
             // Generate response based on intent and context
             ChatMessageResponse response = chatService.generateResponse(
@@ -72,11 +79,56 @@ public class ChatController {
     @PostMapping("/analyze")
     public ResponseEntity<NLPResult> analyzeMessage(@RequestBody AnalyzeMessageRequest request) {
         try {
-            NLPResult result = nlpService.processMessage(request.getMessage(), request.getContext());
+            // Use enhanced NLP if available
+            NLPResult result = enhancedNLPService != null ? 
+                enhancedNLPService.processMessage(request.getMessage(), request.getContext()) :
+                nlpService.processMessage(request.getMessage(), request.getContext());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
+    }
+    
+    @GetMapping("/nlp-status")
+    public ResponseEntity<Map<String, Object>> getNLPStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("basicNLPAvailable", true);
+        status.put("enhancedNLPAvailable", enhancedNLPService != null);
+        
+        if (enhancedNLPService != null) {
+            status.putAll(enhancedNLPService.getSystemStatus());
+        }
+        
+        return ResponseEntity.ok(status);
+    }
+    
+    @PostMapping("/test-stanford")
+    public ResponseEntity<Map<String, Object>> testStanford(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String testMessage = request.getOrDefault("message", "Hello, my name is John Smith and I drive a 2020 Honda Civic. I'm very unhappy with the service!");
+            
+            // Test basic NLP
+            NLPResult basicResult = nlpService.processMessage(testMessage, new UserContext());
+            response.put("basicNLP", basicResult);
+            
+            // Test enhanced NLP if available
+            if (enhancedNLPService != null) {
+                NLPResult enhancedResult = enhancedNLPService.processMessage(testMessage, new UserContext());
+                response.put("enhancedNLP", enhancedResult);
+            }
+            
+            response.put("success", true);
+            response.put("testMessage", testMessage);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/health")

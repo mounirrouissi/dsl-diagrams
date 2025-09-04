@@ -132,7 +132,46 @@ public class NLPService {
         urgentWeights.put("right now", 1.5);
         urgentWeights.put("broke down", 1.9);
         urgentWeights.put("won't start", 1.8);
+        urgentWeights.put("can't move", 1.7);
+        urgentWeights.put("stuck", 1.6);
         intentKeywords.put("emergency", urgentWeights);
+        
+        // Tire Issues
+        Map<String, Double> tireWeights = new HashMap<>();
+        tireWeights.put("flat tire", 2.0);
+        tireWeights.put("flat", 1.8);
+        tireWeights.put("puncture", 1.9);
+        tireWeights.put("punctured", 1.9);
+        tireWeights.put("wheel", 1.5);
+        tireWeights.put("tire", 1.6);
+        tireWeights.put("nail", 1.7);
+        tireWeights.put("hit a nail", 2.0);
+        tireWeights.put("tire pressure", 1.4);
+        tireWeights.put("air", 1.2);
+        tireWeights.put("spare tire", 1.8);
+        tireWeights.put("tire replacement", 1.9);
+        tireWeights.put("tire fix", 1.8);
+        tireWeights.put("tire repair", 1.8);
+        tireWeights.put("wheel problem", 1.7);
+        tireWeights.put("tire assistance", 1.9);
+        intentKeywords.put("tire_assistance", tireWeights);
+        
+        // Oil Issues
+        Map<String, Double> oilWeights = new HashMap<>();
+        oilWeights.put("oil light", 2.0);
+        oilWeights.put("oil", 1.5);
+        oilWeights.put("engine oil", 1.8);
+        oilWeights.put("out of oil", 2.0);
+        oilWeights.put("low oil", 1.9);
+        oilWeights.put("oil change", 1.7);
+        oilWeights.put("engine fluids", 1.8);
+        oilWeights.put("oil delivery", 1.6);
+        oilWeights.put("oil refill", 1.7);
+        oilWeights.put("oil top up", 1.6);
+        oilWeights.put("oil assistance", 1.9);
+        oilWeights.put("oil service", 1.7);
+        oilWeights.put("engine maintenance", 1.5);
+        intentKeywords.put("oil_assistance", oilWeights);
         
         // Complaint/Issue
         Map<String, Double> complaintWeights = new HashMap<>();
@@ -164,7 +203,25 @@ public class NLPService {
         
         // Enhanced service types
         entityPatterns.put("service_type", Pattern.compile(
-            "\\b(oil change|tire rotation|brake inspection|brake check|brake repair|maintenance|tune up|alignment|transmission|engine|battery|alternator|starter|radiator|coolant|air filter|cabin filter|spark plugs|timing belt|serpentine belt|exhaust|muffler|catalytic converter|suspension|shocks|struts|cv joint|differential|power steering|air conditioning|ac repair|heating|diagnostic|inspection|smog check|emissions test)\\b",
+            "\\b(oil change|tire rotation|brake inspection|brake check|brake repair|maintenance|tune up|alignment|transmission|engine|battery|alternator|starter|radiator|coolant|air filter|cabin filter|spark plugs|timing belt|serpentine belt|exhaust|muffler|catalytic converter|suspension|shocks|struts|cv joint|differential|power steering|air conditioning|ac repair|heating|diagnostic|inspection|smog check|emissions test|tire repair|tire replacement|oil service|fluid check)\\b",
+            Pattern.CASE_INSENSITIVE
+        ));
+        
+        // Tire-specific issues
+        entityPatterns.put("tire_issue", Pattern.compile(
+            "\\b(flat|puncture|punctured|nail|screw|debris|air leak|pressure|spare|replacement|repair|fix)\\b",
+            Pattern.CASE_INSENSITIVE
+        ));
+        
+        // Oil-specific issues
+        entityPatterns.put("oil_issue", Pattern.compile(
+            "\\b(oil light|low oil|out of oil|empty|refill|top up|delivery|change|engine oil|motor oil|synthetic|conventional)\\b",
+            Pattern.CASE_INSENSITIVE
+        ));
+        
+        // Automotive problems
+        entityPatterns.put("car_problem", Pattern.compile(
+            "\\b(won't start|can't move|stuck|broke down|overheating|smoking|leaking|grinding|squealing|rattling|knocking|stalling|dead battery|flat tire|oil light)\\b",
             Pattern.CASE_INSENSITIVE
         ));
         
@@ -177,6 +234,18 @@ public class NLPService {
         // Phone numbers
         entityPatterns.put("phone_number", Pattern.compile(
             "\\b(?:\\+?1[-.]?)?\\(?([0-9]{3})\\)?[-.]?([0-9]{3})[-.]?([0-9]{4})\\b"
+        ));
+        
+        // Location patterns
+        entityPatterns.put("location", Pattern.compile(
+            "(?:at|near|on|by)\\s+(?:the\\s+)?([A-Z][a-zA-Z\\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Plaza|Mall|Station|Center|Park))",
+            Pattern.CASE_INSENSITIVE
+        ));
+        
+        // Emergency symptoms
+        entityPatterns.put("car_symptom", Pattern.compile(
+            "\\b(clicking?|cranking?|grinding|squealing|smoking|overheating|leaking|rattling|knocking|stalling)\\b",
+            Pattern.CASE_INSENSITIVE
         ));
         
         // Email addresses
@@ -232,6 +301,18 @@ public class NLPService {
             "I understand this is urgent. Let me connect you with our emergency service team right away.",
             "This sounds like an emergency situation. I'm prioritizing your request and will get you immediate assistance.",
             "I can see this needs immediate attention. Let me get our emergency team to help you right now."
+        ));
+        
+        responseTemplates.put("tire_assistance", Arrays.asList(
+            "Got it — sounds like you have a tire issue. Do you have a spare tire available, or would you like us to bring one?",
+            "I understand you have a tire problem. I can send a technician to help with repair or replacement. What's your location?",
+            "That sounds like a tire issue. I can arrange tire assistance for you. Do you need a full replacement or just air?"
+        ));
+        
+        responseTemplates.put("oil_assistance", Arrays.asList(
+            "Thanks for letting me know. That means your engine oil needs attention. I can send oil delivery and refill service. Would you like me to arrange that now?",
+            "I understand your oil situation. I'll send a technician with engine oil to help you drive safely again. Can you share your location?",
+            "Yes, we provide oil assistance. If your oil is low or empty, we can deliver and refill it for you. Is that what you need right now?"
         ));
     }
     
@@ -537,8 +618,8 @@ public class NLPService {
         return false;
     }
     
-    private String generateSuggestedResponse(String intent, Map<String, String> entities, 
-                                           UserContext context, String sentiment) {
+    public String generateSuggestedResponse(String intent, Map<String, String> entities,
+                                            UserContext context, String sentiment) {
         // Handle emergency first
         if ("emergency".equals(intent)) {
             return getRandomTemplate("emergency_response");
@@ -586,9 +667,50 @@ public class NLPService {
                 return "Perfect! I'll take care of that for you.";
             case "negation":
                 return "No problem. Is there something else I can help you with?";
+            case "tire_assistance":
+                return generateTireResponse(entities);
+            case "oil_assistance":
+                return generateOilResponse(entities);
             default:
                 return "I'm here to help with your automotive needs. Could you please tell me more about what you're looking for?";
         }
+    }
+    
+    private String generateTireResponse(Map<String, String> entities) {
+        String tireIssue = entities.get("tire_issue");
+        String carProblem = entities.get("car_problem");
+        
+        if (tireIssue != null) {
+            if (tireIssue.toLowerCase().contains("flat") || tireIssue.toLowerCase().contains("puncture")) {
+                return "Got it — sounds like you have a flat tire. Do you have a spare tire available, or would you like us to bring one?";
+            } else if (tireIssue.toLowerCase().contains("nail")) {
+                return "Understood. That's a punctured tire from road debris. I can send a technician to replace it or inflate it temporarily. Where are you located?";
+            } else if (tireIssue.toLowerCase().contains("air") || tireIssue.toLowerCase().contains("pressure")) {
+                return "I can help with tire pressure. Do you need air added to your tires, or is there a leak that needs repair?";
+            }
+        }
+        
+        if (carProblem != null && carProblem.toLowerCase().contains("can't move")) {
+            return "I understand your car can't move due to a tire issue. I can send immediate roadside assistance. What's your current location?";
+        }
+        
+        return "Yes, I can arrange tire assistance. Could you confirm if the tire needs a full replacement or just air?";
+    }
+    
+    private String generateOilResponse(Map<String, String> entities) {
+        String oilIssue = entities.get("oil_issue");
+        
+        if (oilIssue != null) {
+            if (oilIssue.toLowerCase().contains("oil light")) {
+                return "Thanks for letting me know. That means your engine oil is low. I can send oil delivery and refill service. Would you like me to arrange that now?";
+            } else if (oilIssue.toLowerCase().contains("out of oil") || oilIssue.toLowerCase().contains("empty")) {
+                return "Of course. I'll send a technician with engine oil to top up your car so you can drive safely again. Can you share your location?";
+            } else if (oilIssue.toLowerCase().contains("low oil")) {
+                return "I can help with low oil. We'll send someone to check your oil level and top it up if needed. Where are you located?";
+            }
+        }
+        
+        return "Yes, we provide oil assistance. If your oil is low or empty, we can deliver and refill it for you. Is that what you need right now?";
     }
     
     private String getVehicleDisplayName(VehicleDTO vehicle) {
@@ -596,5 +718,11 @@ public class NLPService {
             return vehicle.getDisplayName();
         }
         return "vehicle";
+    }
+    
+    // Public method for the enhanced service to use
+    public String generateSuggestedResponsePublic(String intent, Map<String, String> entities,
+                                          UserContext context, String sentiment) {
+        return generateSuggestedResponse(intent, entities, context, sentiment);
     }
 }

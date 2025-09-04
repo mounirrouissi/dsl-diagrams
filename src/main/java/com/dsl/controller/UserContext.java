@@ -22,4 +22,7 @@ public class UserContext {
     private int messageCount = 0;
     private String preferredLanguage = "en";
     private boolean isReturningCustomer = false;
+    private String currentLocation;
+    private String emergencyType;
+    private boolean isEmergencyMode = false;
 }
