@@ -72,6 +72,21 @@ public class DatabaseChatService {
         String intent = nlpResult.getIntent();
         Map<String, String> entities = nlpResult.getEntities();
         
+        // Check conversation state for context-specific handling
+        String conversationState = updatedContext.getConversationState();
+        
+        // Override intent based on conversation state
+        if ("tire_service_options".equals(conversationState) && 
+            ("tire_service_choice".equals(intent) || isValidTireChoice(userMessage))) {
+            intent = "tire_service_choice";
+        } else if ("oil_diagnosis_needed".equals(conversationState) && 
+                   ("oil_service_choice".equals(intent) || isValidOilChoice(userMessage))) {
+            intent = "oil_service_choice";
+        } else if ("oil_service_selection".equals(conversationState) || 
+                   "tire_service_selection".equals(conversationState)) {
+            intent = "service_selection";
+        }
+        
         switch (intent) {
             case "greeting":
                 responseMessage = handleGreeting(updatedContext, entities, session);
@@ -117,31 +132,48 @@ public class DatabaseChatService {
                 quickReplies = getTireAssistanceQuickReplies();
                 break;
                 
+            case "tire_service_choice":
+                responseMessage = handleTireServiceChoice(updatedContext, userMessage, session);
+                quickReplies = getTireLocationQuickReplies();
+                break;
+                
+            case "location_provided":
+                responseMessage = handleLocationProvided(updatedContext, entities, session);
+                quickReplies = getTireConfirmationQuickReplies();
+                break;
+                
             case "oil_assistance":
                 responseMessage = handleOilAssistance(updatedContext, entities, session, userMessage);
                 quickReplies = getOilAssistanceQuickReplies();
                 break;
                 
-            case "confirmation":
-                responseMessage = handleConfirmation(updatedContext, entities, session);
+            case "oil_service_choice":
+                responseMessage = handleOilServiceChoice(updatedContext, userMessage, session);
+                quickReplies = getOilLocationQuickReplies();
+                break;
+                
+            case "service_selection":
+                responseMessage = handleServiceSelection(updatedContext, userMessage, session);
+                quickReplies = getServiceBookingQuickReplies();
                 break;
                 
             default:
-                responseMessage = handleDefault(updatedContext, userMessage);
+//                responseMessage = handleDefault(updatedContext, userMessage);
+                responseMessage = "I'm here to help with your automotive needs. Could you please provide more details or specify what assistance you require?";
                 quickReplies = getDefaultQuickReplies();
         }
-        
+
         // Save bot response
         ChatMessage botMsg = new ChatMessage(session, responseMessage, MessageSender.BOT, intent);
         chatMessageRepository.save(botMsg);
-        
+
         // Update session activity
         session.setLastActivity(LocalDateTime.now());
         chatSessionRepository.save(session);
-        
+
         return new ChatMessageResponse(responseMessage, intent, updatedContext, quickReplies);
     }
-    
+
     private ChatSession getOrCreateSession(String sessionId) {
         return chatSessionRepository.findBySessionId(sessionId)
             .orElseGet(() -> {
@@ -149,14 +181,14 @@ public class DatabaseChatService {
                 return chatSessionRepository.save(newSession);
             });
     }
-    
+
     private void updateSessionContext(ChatSession session, UserContext context) {
         if (context != null) {
             Map<String, Object> contextData = session.getContextData();
             if (contextData == null) {
                 contextData = new HashMap<>();
             }
-            
+
             if (context.getCustomerName() != null) {
                 contextData.put("customerName", context.getCustomerName());
             }
@@ -169,14 +201,14 @@ public class DatabaseChatService {
             if (context.getConversationState() != null) {
                 contextData.put("conversationState", context.getConversationState());
             }
-            
+
             session.setContextData(contextData);
         }
     }
-    
+
     private UserContext mergeContextFromSession(ChatSession session, UserContext incomingContext) {
         UserContext context = incomingContext != null ? incomingContext : new UserContext();
-        
+
         Map<String, Object> sessionData = session.getContextData();
         if (sessionData != null) {
             if (context.getCustomerName() == null && sessionData.containsKey("customerName")) {
@@ -192,21 +224,21 @@ public class DatabaseChatService {
                 context.setConversationState((String) sessionData.get("conversationState"));
             }
         }
-        
+
         return context;
     }
-    
+
     private String handleGreeting(UserContext context, Map<String, String> entities, ChatSession session) {
         // Check if we have an existing customer
         if (context.getCustomerId() != null) {
             Optional<Customer> customer = customerRepository.findById(context.getCustomerId());
             if (customer.isPresent()) {
                 session.setCustomer(customer.get());
-                return String.format("Welcome back, %s! How can I help you with your vehicle today?", 
+                return String.format("Welcome back, %s! How can I help you with your vehicle today?",
                     customer.get().getFirstName());
             }
         }
-        
+
         // Check if name was provided in greeting
         String name = entities.get("person_name");
         if (name != null) {
@@ -217,7 +249,7 @@ public class DatabaseChatService {
                 session.setCustomer(customer);
                 context.setCustomerId(customer.getId());
                 context.setCustomerName(customer.getFullName());
-                return String.format("Welcome back, %s! I see you have a %s. How can I help you today?", 
+                return String.format("Welcome back, %s! I see you have a %s. How can I help you today?",
                     customer.getFirstName(), getCustomerVehicleInfo(customer));
             } else {
                 context.setCustomerName(name);
@@ -225,13 +257,15 @@ public class DatabaseChatService {
                 return String.format("Nice to meet you, %s! I'm here to help with your automotive needs. What vehicle do you need service for?", name);
             }
         }
-        
-        return "Hello! I'm your auto service assistant. I can help you with vehicle maintenance, service bookings, and answer questions about your car. What's your name?";
+
+        return "Hey! 👋 I'm AutoAssist. What can I help you with today?";
     }
     
-    private String handleNameProvision(UserContext context, Map<String, String> entities, ChatSession session) {
+    /*private String handleNameProvision(UserContext context, Map<String, String> entities, ChatSession session) {
         String name = entities.get("person_name");
         if (name != null) {
+            context.setCustomerName(name);
+            
             // Try to find existing customer
             List<Customer> customers = customerRepository.searchByName(name);
             if (!customers.isEmpty()) {
@@ -239,37 +273,92 @@ public class DatabaseChatService {
                 session.setCustomer(customer);
                 context.setCustomerId(customer.getId());
                 context.setCustomerName(customer.getFullName());
-                
-                List<Vehicle> vehicleDTOS = vehicleRepository.findByCustomerId(customer.getId());
-                if (!vehicleDTOS.isEmpty()) {
-                    Vehicle primaryVehicleDTO = vehicleDTOS.get(0);
-                    context.setVehicle(convertEntityToDto(primaryVehicleDTO));
+            }
+
+            // Check if this is part of tire assistance flow
+            if ("tire_assistance_need_name".equals(context.getConversationState())) {
+                context.setConversationState("tire_service_options");
+                return String.format("Thanks, %s — I've got you. Here's what we can do for tire problems:\n\n" +
+                    "• Replace the tire (we bring a matching spare and swap it on-site)\n" +
+                    "• Temporary inflation & patch (gets you to a nearby garage if the spare isn't available)\n" +
+                    "• Mobile repair estimate (technician will check the puncture and tell you if it's repairable)\n\n" +
+                    "I can send a technician now. I have two options:\n" +
+                    "• Immediate dispatch — technician arrives in ~20–30 minutes\n" +
+                    "• Scheduled — set a time that suits you (e.g., 10:30 AM or 2:00 PM)\n\n" +
+                    "Which do you prefer, %s? (You can also type your location now so I can confirm ETA.)", 
+                    name, name);
+            }
+
+            // Regular name provision flow
+            if (!customers.isEmpty()) {
+                Customer customer = customers.get(0);
+                List<Vehicle> vehicles = vehicleRepository.findByCustomerId(customer.getId());
+                if (!vehicles.isEmpty()) {
+                    Vehicle primaryVehicle = vehicles.get(0);
+                    context.setVehicle(convertEntityToDto(primaryVehicle));
                     return String.format("Great to see you again, %s! I see you have a %s. What service do you need today?", 
-                        customer.getFirstName(), primaryVehicleDTO.getDisplayName());
+                        customer.getFirstName(), primaryVehicle.getDisplayName());
                 }
-                
                 return String.format("Welcome back, %s! What vehicle do you need service for?", customer.getFirstName());
             } else {
-                context.setCustomerName(name);
+                context.setConversationState("new_customer");
+                return String.format("Nice to meet you, %s! What vehicle do you need service for? Please tell me the make, model, and year.", name);
+            }
+        }
+        return "I didn't catch your name. Could you please tell me your name again?";
+    }*/
+
+    private String handleNameProvision(UserContext context, Map<String, String> entities, ChatSession session) {
+        String name = entities.get("person_name");
+        if (name != null) {
+            context.setCustomerName(name);
+            
+            // Try to find existing customer
+            List<Customer> customers = customerRepository.searchByName(name);
+            if (!customers.isEmpty()) {
+                Customer customer = customers.get(0);
+                session.setCustomer(customer);
+                context.setCustomerId(customer.getId());
+                context.setCustomerName(customer.getFullName());
+            }
+
+            // Check if this is part of tire assistance flow
+            if ("tire_assistance_need_name".equals(context.getConversationState())) {
+                context.setConversationState("tire_service_options");
+                return String.format("Thanks, %s — I've got you. Here are your tire service options:", name);
+            }
+
+            // Regular name provision flow
+            if (!customers.isEmpty()) {
+                Customer customer = customers.get(0);
+                List<Vehicle> vehicles = vehicleRepository.findByCustomerId(customer.getId());
+                if (!vehicles.isEmpty()) {
+                    Vehicle primaryVehicle = vehicles.get(0);
+                    context.setVehicle(convertEntityToDto(primaryVehicle));
+                    return String.format("Great to see you again, %s! I see you have a %s. What service do you need today?", 
+                        customer.getFirstName(), primaryVehicle.getDisplayName());
+                }
+                return String.format("Welcome back, %s! What vehicle do you need service for?", customer.getFirstName());
+            } else {
                 context.setConversationState("new_customer");
                 return String.format("Nice to meet you, %s! What vehicle do you need service for? Please tell me the make, model, and year.", name);
             }
         }
         return "I didn't catch your name. Could you please tell me your name again?";
     }
-    
+
     private String handleVehicleInfo(UserContext context, Map<String, String> entities, ChatSession session) {
         String make = entities.get("vehicle_make");
         String model = entities.get("vehicle_model");
         String yearStr = entities.get("vehicle_year");
-        
+
         if (make != null) {
             VehicleDTO vehicleDto = context.getVehicle();
             if (vehicleDto == null) {
                 vehicleDto = new VehicleDTO();
                 context.setVehicle(vehicleDto);
             }
-            
+
             vehicleDto.setMake(make);
             if (model != null) vehicleDto.setModel(model);
             if (yearStr != null) {
@@ -279,33 +368,33 @@ public class DatabaseChatService {
                     // Handle invalid year
                 }
             }
-            
+
             // If we have a customer, try to find or create the vehicle
             if (session.getCustomer() != null) {
                 List<Vehicle> existingVehicleDTOS = vehicleRepository.findByCustomerIdAndMake(
                     session.getCustomer().getId(), make);
-                
+
                 if (!existingVehicleDTOS.isEmpty()) {
                     Vehicle vehicleDTO = existingVehicleDTOS.get(0);
                     context.setVehicle(convertEntityToDto(vehicleDTO));
-                    
+
                     // Get service recommendations
                     List<ServiceHistory> history = serviceHistoryRepository.findByVehicleIdOrderByServiceDateDesc(vehicleDTO.getId());
                     String recommendations = getServiceRecommendations(vehicleDTO, history);
-                    
-                    return String.format("Perfect! I have your %s on file. %s What service do you need today?", 
+
+                    return String.format("Perfect! I have your %s on file. %s What service do you need today?",
                         vehicleDTO.getDisplayName(), recommendations);
                 }
             }
-            
+
             context.setConversationState("vehicle_provided");
-            return String.format("Great! I have your %s %s %s. What service do you need today?", 
+            return String.format("Great! I have your %s %s %s. What service do you need today?",
                 yearStr != null ? yearStr : "", make, model != null ? model : "");
         }
-        
+
         return "I need a bit more information about your vehicle. Could you tell me the make, model, and year? For example: '2020 Honda Civic'";
     }
-    
+
     private String handleServiceInquiry(UserContext context, Map<String, String> entities, ChatSession session) {
         String serviceType = entities.get("service_type");
         if (serviceType != null) {
@@ -314,83 +403,49 @@ public class DatabaseChatService {
             if (!services.isEmpty()) {
                 com.dsl.entity.Service service = services.get(0);
                 context.setCurrentService(service.getName());
-                
-                return String.format("Perfect! I can help you with %s. This service typically takes about %d minutes and costs $%.2f. Would you like to schedule an appointment?", 
+
+                return String.format("Perfect! I can help you with %s. This service typically takes about %d minutes and costs $%.2f. Would you like to schedule an appointment?",
                     service.getName(), service.getDurationMinutes(), service.getPrice());
             }
-            
+
             context.setCurrentService(serviceType);
             return String.format("I can help you with %s service. Would you like to schedule an appointment?", serviceType);
         }
-        
+
         return "What type of service do you need? We offer oil changes, tire rotations, brake inspections, and more.";
     }
-    
+
     private String handleBookingRequest(UserContext context, Map<String, String> entities, ChatSession session) {
         if (context.getVehicle() == null || context.getCurrentService() == null) {
             return "I'll need your vehicle information and the service you want before we can book an appointment. What car do you drive and what service do you need?";
         }
-        
+
         // Check availability and suggest times
         List<String> availableSlots = getAvailableTimeSlots();
         context.setConversationState("booking_appointment");
-        
-        return String.format("I'd be happy to schedule your %s for your %s. Here are some available times: %s. Which works best for you?", 
-            context.getCurrentService(), 
+
+        return String.format("I'd be happy to schedule your %s for your %s. Here are some available times: %s. Which works best for you?",
+            context.getCurrentService(),
             getVehicleDisplayName(context.getVehicle()),
             String.join(", ", availableSlots.subList(0, Math.min(3, availableSlots.size()))));
     }
-    
-    private String handleConfirmation(UserContext context, Map<String, String> entities, ChatSession session) {
-        String conversationState = context.getConversationState();
-        
-        if ("booking_appointment".equals(conversationState)) {
-            // Create the appointment
-            if (session.getCustomer() != null && context.getVehicle() != null && context.getCurrentService() != null) {
-                try {
-                    createAppointment(session.getCustomer(), context);
-                    context.setConversationState("appointment_confirmed");
-                    return String.format("Perfect! I've scheduled your %s appointment for your %s. You'll receive a confirmation shortly. Is there anything else I can help you with?",
-                        context.getCurrentService(), getVehicleDisplayName(context.getVehicle()));
-                } catch (Exception e) {
-                    return "I'm sorry, there was an issue scheduling your appointment. Let me try again or you can call us directly.";
-                }
-            }
-        } else if ("battery_issue_diagnosed".equals(conversationState)) {
-            // User confirmed they want roadside assistance
-            if (context.getCurrentLocation() != null) {
-                context.setConversationState("roadside_dispatched");
-                return String.format("Great! ✅ I've dispatched roadside assistance to %s. The nearest technician is about 15 minutes away. " +
-                    "Would you like me to also check if your battery needs replacement while they're there?", 
-                    context.getCurrentLocation());
-            } else {
-                return "I'll be happy to send roadside assistance. Can you please share your current location?";
-            }
-        } else if ("roadside_dispatched".equals(conversationState)) {
-            // User confirmed they want battery check
-            context.setConversationState("full_service_scheduled");
-            return "Perfect! I've noted that for a battery replacement check. You'll receive a text update when the technician is on the way. " +
-                   "For your safety, please stay inside your vehicle with hazard lights on. 🚨 " +
-                   "I'll stay connected and update you every 5 minutes until help arrives.";
-        }
-        
-        return "Thank you for confirming! Is there anything else I can help you with today?";
-    }
-    
+
+
+
     private String handleEmergency(UserContext context, Map<String, String> entities, ChatSession session, String userMessage) {
         context.setConversationState("emergency_mode");
         context.setEmergencyMode(true);
-        
+
         // Analyze the emergency type and symptoms
         String emergencyType = analyzeEmergencyType(userMessage);
         String location = entities.get("location");
         String symptom = entities.get("car_symptom");
-        
+
         StringBuilder response = new StringBuilder();
-        
+
         if (emergencyType.equals("wont_start")) {
             response.append("I'm sorry to hear that your car won't start and you're stuck. Let me help you right away. ");
-            
+
             // Check for specific symptoms mentioned
             if (symptom != null && symptom.toLowerCase().contains("click")) {
                 response.append("You mentioned it clicks - that usually indicates a weak or dead battery. ");
@@ -410,12 +465,12 @@ public class DatabaseChatService {
         } else {
             response.append("I can see this is urgent. Let me get you the help you need right away. ");
         }
-        
+
         // Handle location information
         if (location != null) {
             response.append(String.format("Got it ✅. I've pinned your location at %s. ", location));
             context.setCurrentLocation(location);
-            
+
             if ("battery_issue_diagnosed".equals(context.getConversationState())) {
                 response.append("The nearest technician is about 15 minutes away. Would you like me to also check if your battery needs replacement while they're there?");
                 context.setConversationState("roadside_dispatched");
@@ -423,123 +478,131 @@ public class DatabaseChatService {
         } else if ("battery_issue_diagnosed".equals(context.getConversationState())) {
             response.append("I can send roadside assistance to jump-start your car. Can you share your current location so I can dispatch help?");
         }
-        
+
         return response.toString();
     }
-    
+
     private String handleComplaint(UserContext context, Map<String, String> entities, ChatSession session) {
         context.setConversationState("handling_complaint");
-        
+
         return "I understand your concern and I sincerely apologize for any inconvenience. Your satisfaction is very important to us. " +
                "Let me connect you with a specialist who can address this issue properly and make things right. " +
                "In the meantime, could you please provide more details about what happened?";
     }
-    
+
     private String handleTireAssistance(UserContext context, Map<String, String> entities, ChatSession session, String userMessage) {
         context.setConversationState("tire_assistance");
         context.setCurrentService("tire_assistance");
-        
-        String tireIssue = entities.get("tire_issue");
-        String carProblem = entities.get("car_problem");
-        String location = entities.get("location");
-        
-        StringBuilder response = new StringBuilder();
-        
-        // Analyze the specific tire problem
-        String lowerMessage = userMessage.toLowerCase();
-        
-        if (lowerMessage.contains("flat") || lowerMessage.contains("wheel")) {
-            response.append("Got it — sounds like you have a flat tire. ");
-            context.setEmergencyType("flat_tire");
-            
-            if (lowerMessage.contains("nail") || lowerMessage.contains("hit")) {
-                response.append("You mentioned hitting something - that's likely a puncture. ");
-                context.setConversationState("punctured_tire");
-            }
-            
-            if (lowerMessage.contains("can't move") || lowerMessage.contains("won't move")) {
-                response.append("Since your car can't move, I'll prioritize this as urgent. ");
-                context.setEmergencyMode(true);
-            }
-            
-            response.append("Do you have a spare tire available, or would you like us to bring one?");
-            
-        } else if (lowerMessage.contains("nail")) {
-            response.append("Understood. That's a punctured tire from road debris. ");
-            response.append("I can send a technician to replace it or inflate it temporarily. Where are you located?");
-            context.setConversationState("punctured_tire");
-            
-        } else if (lowerMessage.contains("fix") || lowerMessage.contains("repair")) {
-            response.append("Yes, I can arrange tire assistance. ");
-            response.append("Could you confirm if the tire needs a full replacement or just air?");
-            context.setConversationState("tire_diagnosis_needed");
-            
-        } else {
-            response.append("I can help with your tire issue. ");
-            response.append("Could you tell me more about what's wrong with the tire?");
-            context.setConversationState("tire_diagnosis_needed");
+
+        // Check if we need to ask for name first
+        if (context.getCustomerName() == null && session.getCustomer() == null) {
+            context.setConversationState("tire_assistance_need_name");
+            return "Sorry that happened — that sounds like a tire problem. Before I arrange help, may I have your name please?";
+        }
+
+        // If we have the name, provide detailed tire service options
+        String customerName = context.getCustomerName() != null ? context.getCustomerName() : 
+                             (session.getCustomer() != null ? session.getCustomer().getFirstName() : "");
+
+        if ("tire_assistance_need_name".equals(context.getConversationState()) && !customerName.isEmpty()) {
+            context.setConversationState("tire_service_selection");
+            return String.format("Thanks, %s — I've got you. Here are the available tire services:", customerName);
         }
         
-        // Handle location if provided
-        if (location != null) {
-            context.setCurrentLocation(location);
-            response.append(String.format(" I have your location as %s.", location));
+        // For general tire assistance, show available services
+        if (customerName != null && !customerName.isEmpty()) {
+            context.setConversationState("tire_service_selection");
+            return String.format("I can help with your tire issue, %s. Here are the available tire services:", customerName);
         }
-        
-        return response.toString();
+
+        return "I can help with your tire issue. What specific problem are you experiencing?";
     }
-    
+
+    private String handleTireServiceChoice(UserContext context, String choice, ChatSession session) {
+        String customerName = context.getCustomerName() != null ? context.getCustomerName() : 
+                             (session.getCustomer() != null ? session.getCustomer().getFirstName() : "");
+
+        switch (choice.toLowerCase()) {
+            case "replace the tire":
+                context.setConversationState("tire_replacement_selected");
+                return String.format("Perfect choice, %s! I'll send a technician with a matching tire to replace it on-site. " +
+                    "This typically takes 15-20 minutes. Can you share your current location so I can dispatch help?", customerName);
+
+            case "temporary patch":
+                context.setConversationState("tire_patch_selected");
+                return String.format("Good option, %s! I'll send someone to temporarily patch and inflate your tire. " +
+                    "This will get you safely to a nearby garage for a permanent fix. Where are you located?", customerName);
+
+            case "mobile repair estimate":
+                context.setConversationState("tire_estimate_selected");
+                return String.format("Smart approach, %s! I'll send a technician to assess the damage and provide a repair estimate. " +
+                    "They'll tell you if it's repairable or needs replacement. What's your location?", customerName);
+
+            case "immediate dispatch":
+                context.setConversationState("tire_immediate_dispatch");
+                return String.format("Understood, %s! I'll dispatch the nearest technician right away. " +
+                    "They'll arrive in approximately 20-30 minutes. Please share your location to confirm the ETA.", customerName);
+
+            case "schedule for later":
+                context.setConversationState("tire_scheduled_service");
+                return String.format("No problem, %s! When would you like to schedule the tire service? " +
+                    "I have availability today at 2:00 PM, 4:00 PM, or tomorrow morning at 9:00 AM.", customerName);
+
+            default:
+                return "I didn't catch that option. Please choose from the available tire service options.";
+        }
+    }
+
     private String handleOilAssistance(UserContext context, Map<String, String> entities, ChatSession session, String userMessage) {
         context.setConversationState("oil_assistance");
         context.setCurrentService("oil_assistance");
-        
+
         String oilIssue = entities.get("oil_issue");
         String location = entities.get("location");
-        
+
         StringBuilder response = new StringBuilder();
-        
+
         // Analyze the specific oil problem
         String lowerMessage = userMessage.toLowerCase();
-        
+
         if (lowerMessage.contains("oil light")) {
             response.append("Thanks for letting me know. That oil light means your engine oil is low. ");
             response.append("I can send oil delivery and refill service. Would you like me to arrange that now?");
             context.setConversationState("oil_light_on");
-            
+
         } else if (lowerMessage.contains("out of oil") || lowerMessage.contains("empty")) {
             response.append("Of course. I'll send a technician with engine oil to top up your car so you can drive safely again. ");
             response.append("Can you share your location?");
             context.setConversationState("oil_empty");
             context.setEmergencyMode(true); // Empty oil is urgent
-            
+
         } else if (lowerMessage.contains("engine fluids")) {
             response.append("Yes, we provide oil assistance. If your oil is low or empty, we can deliver and refill it for you. ");
             response.append("Is that what you need right now?");
             context.setConversationState("oil_service_inquiry");
-            
+
         } else if (lowerMessage.contains("low oil")) {
             response.append("I can help with low oil. We'll send someone to check your oil level and top it up if needed. ");
             response.append("Where are you located?");
             context.setConversationState("oil_low");
-            
+
         } else {
-            response.append("I can help with oil-related services. ");
-            response.append("Could you tell me more about the oil issue you're experiencing?");
-            context.setConversationState("oil_diagnosis_needed");
+            response.append("I can help with oil-related services. Here are the available oil services:");
+            context.setConversationState("oil_service_selection");
         }
-        
+
         // Handle location if provided
         if (location != null) {
             context.setCurrentLocation(location);
             response.append(String.format(" I have your location as %s.", location));
         }
-        
+
         return response.toString();
     }
-    
+
     private String handleConfirmation(UserContext context, Map<String, String> entities, ChatSession session) {
         String conversationState = context.getConversationState();
-        
+
         if ("booking_appointment".equals(conversationState)) {
             // Create the appointment
             if (session.getCustomer() != null && context.getVehicle() != null && context.getCurrentService() != null) {
@@ -557,7 +620,7 @@ public class DatabaseChatService {
             if (context.getCurrentLocation() != null) {
                 context.setConversationState("roadside_dispatched");
                 return String.format("Great! ✅ I've dispatched roadside assistance to %s. The nearest technician is about 15 minutes away. " +
-                    "Would you like me to also check if your battery needs replacement while they're there?", 
+                    "Would you like me to also check if your battery needs replacement while they're there?",
                     context.getCurrentLocation());
             } else {
                 return "I'll be happy to send roadside assistance. Can you please share your current location?";
@@ -581,7 +644,7 @@ public class DatabaseChatService {
             // User confirmed oil service
             if (context.getCurrentLocation() != null) {
                 context.setConversationState("oil_service_dispatched");
-                String urgencyNote = "oil_empty".equals(conversationState) ? 
+                String urgencyNote = "oil_empty".equals(conversationState) ?
                     "This is urgent since you're out of oil. " : "";
                 return String.format("Perfect! %sI've arranged oil service to %s. A technician will arrive in 15-25 minutes with fresh engine oil. " +
                     "Please avoid driving until they arrive to prevent engine damage.", urgencyNote, context.getCurrentLocation());
@@ -589,14 +652,14 @@ public class DatabaseChatService {
                 return "Understood! I'll send oil assistance. Can you please share your location so I can dispatch a technician?";
             }
         }
-        
+
         return "Thank you for confirming! Is there anything else I can help you with today?";
     }
-    
+
     private String analyzeEmergencyType(String message) {
         String lowerMessage = message.toLowerCase();
-        
-        if (lowerMessage.contains("won't start") || lowerMessage.contains("wont start") || 
+
+        if (lowerMessage.contains("won't start") || lowerMessage.contains("wont start") ||
             lowerMessage.contains("doesn't start") || lowerMessage.contains("not starting")) {
             return "wont_start";
         } else if (lowerMessage.contains("broke down") || lowerMessage.contains("broken down") ||
@@ -604,23 +667,23 @@ public class DatabaseChatService {
             return "breakdown";
         } else if (lowerMessage.contains("accident") || lowerMessage.contains("crash")) {
             return "accident";
-        } else if (lowerMessage.contains("smoke") || lowerMessage.contains("fire") || 
+        } else if (lowerMessage.contains("smoke") || lowerMessage.contains("fire") ||
                    lowerMessage.contains("burning")) {
             return "fire_hazard";
         }
-        
+
         return "general_emergency";
     }
-    
+
     private String handleDefault(UserContext context) {
         String conversationState = context.getConversationState();
-        
+
         // Emergency mode responses
         if ("diagnosing_startup_issue".equals(conversationState)) {
             return "Please let me know what sounds your car makes when you try to start it - this will help me diagnose the issue better.";
         } else if ("battery_issue_diagnosed".equals(conversationState)) {
             if (context.getCurrentLocation() != null) {
-                return "I'm ready to send roadside assistance for a jump-start to " + context.getCurrentLocation() + 
+                return "I'm ready to send roadside assistance for a jump-start to " + context.getCurrentLocation() +
                        ". Should I dispatch them now?";
             } else {
                 return "I'm ready to send roadside assistance for a jump-start. I just need your location to dispatch help.";
@@ -632,11 +695,12 @@ public class DatabaseChatService {
         } else if ("emergency_mode".equals(conversationState)) {
             return "I'm still here to help with your emergency. What additional information can you provide?";
         }
-        
+
         // Handle location-only messages during emergency
         if (context.isEmergencyMode() && context.getCurrentLocation() == null) {
             // Check if the message might be a location
-            String location = extractLocationFromMessage(userMessage);
+//            String location = extractLocationFromMessage(userMessage);
+            String location = "ATlanta GA"; // Placeholder for actual extraction logic
             if (location != null) {
                 context.setCurrentLocation(location);
                 if ("battery_issue_diagnosed".equals(conversationState)) {
@@ -646,14 +710,14 @@ public class DatabaseChatService {
             }
             return handlePotentialLocation(context);
         }
-        
+
         return "I'm here to help with your automotive needs. You can ask me about services, schedule appointments, or get information about vehicle maintenance. What would you like to know?";
     }
-    
+
     private String extractLocationFromMessage(String message) {
         // Simple location extraction - look for common location patterns
         String lowerMessage = message.toLowerCase();
-        
+
         // Check for "I'm at/near/on" patterns
         if (lowerMessage.matches(".*\\b(at|near|on)\\s+.*")) {
             // Extract everything after the preposition
@@ -662,22 +726,50 @@ public class DatabaseChatService {
                 return parts[1].trim();
             }
         }
-        
+
         // Check for street/location keywords
-        if (lowerMessage.contains("street") || lowerMessage.contains("avenue") || 
+        if (lowerMessage.contains("street") || lowerMessage.contains("avenue") ||
             lowerMessage.contains("road") || lowerMessage.contains("station") ||
             lowerMessage.contains("mall") || lowerMessage.contains("center")) {
             return message.trim();
         }
-        
+
         return null;
     }
-    
+
     private String handlePotentialLocation(UserContext context) {
         return "Got it! Let me confirm - are you saying that's your current location? If so, I can dispatch roadside assistance right away.";
     }
-    
+
     // Helper methods
+    private boolean isValidTireChoice(String message) {
+        String lowerMessage = message.toLowerCase();
+        return lowerMessage.contains("replace the tire") ||
+               lowerMessage.contains("temporary patch") ||
+               lowerMessage.contains("mobile repair estimate") ||
+               lowerMessage.contains("immediate dispatch") ||
+               lowerMessage.contains("schedule for later") ||
+               lowerMessage.contains("patch") ||
+               lowerMessage.contains("replace") ||
+               lowerMessage.contains("estimate") ||
+               lowerMessage.contains("immediate") ||
+               lowerMessage.contains("schedule");
+    }
+
+    private boolean isValidOilChoice(String message) {
+        String lowerMessage = message.toLowerCase();
+        return lowerMessage.contains("oil light is on") ||
+               lowerMessage.contains("out of oil completely") ||
+               lowerMessage.contains("low oil level") ||
+               lowerMessage.contains("need oil change") ||
+               lowerMessage.contains("emergency oil delivery") ||
+               lowerMessage.contains("oil light") ||
+               lowerMessage.contains("completely out") ||
+               lowerMessage.contains("low level") ||
+               lowerMessage.contains("oil change") ||
+               lowerMessage.contains("emergency delivery");
+    }
+
     private String getCustomerVehicleInfo(Customer customer) {
         List<Vehicle> vehicleDTOS = vehicleRepository.findByCustomerId(customer.getId());
         if (!vehicleDTOS.isEmpty()) {
@@ -685,26 +777,26 @@ public class DatabaseChatService {
         }
         return "vehicle";
     }
-    
+
     private String getServiceRecommendations(Vehicle vehicleDTO, List<ServiceHistory> history) {
         if (history.isEmpty()) {
             return "I don't see any recent service history.";
         }
-        
+
         ServiceHistory lastService = history.get(0);
-        return String.format("Your last service was %s on %s.", 
+        return String.format("Your last service was %s on %s.",
             lastService.getService().getName(), lastService.getServiceDate());
     }
-    
+
     private List<String> getAvailableTimeSlots() {
         // Simplified - in real implementation, check actual availability
         return Arrays.asList("Tomorrow 9:00 AM", "Tomorrow 2:00 PM", "Friday 10:00 AM", "Friday 3:00 PM");
     }
-    
+
     private void createAppointment(Customer customer, UserContext context) {
         // Find or create vehicle
         Vehicle vehicleDTO = findOrCreateVehicle(customer, context.getVehicle());
-        
+
         // Find service
         Optional<com.dsl.entity.Service> serviceOpt = serviceRepository.findByNameIgnoreCase(context.getCurrentService());
         if (serviceOpt.isPresent()) {
@@ -712,27 +804,27 @@ public class DatabaseChatService {
             appointmentRepository.save(appointment);
         }
     }
-    
+
     private Vehicle findOrCreateVehicle(Customer customer, VehicleDTO vehicleDto) {
         if (vehicleDto.getMake() != null && vehicleDto.getModel() != null && vehicleDto.getYear() != null) {
             List<Vehicle> existing = vehicleRepository.findByCustomerIdAndMake(customer.getId(), vehicleDto.getMake());
             if (!existing.isEmpty()) {
                 return existing.get(0);
             }
-            
+
             Vehicle newVehicleDTO = new Vehicle(customer, vehicleDto.getMake(), vehicleDto.getModel(), vehicleDto.getYear());
             return vehicleRepository.save(newVehicleDTO);
         }
         return null;
     }
-    
+
     private String getVehicleDisplayName(VehicleDTO vehicle) {
         if (vehicle.getYear() != null && vehicle.getMake() != null && vehicle.getModel() != null) {
             return vehicle.getYear() + " " + vehicle.getMake() + " " + vehicle.getModel();
         }
         return "vehicle";
     }
-    
+
     // Quick reply methods
     private List<QuickReply> getGreetingQuickReplies() {
         return Arrays.asList(
@@ -741,7 +833,7 @@ public class DatabaseChatService {
             new QuickReply("Check service history")
         );
     }
-    
+
     private List<QuickReply> getVehicleInfoQuickReplies() {
         return Arrays.asList(
             new QuickReply("2020 Honda Civic"),
@@ -749,7 +841,7 @@ public class DatabaseChatService {
             new QuickReply("2021 Ford F-150")
         );
     }
-    
+
     private List<QuickReply> getServiceQuickReplies() {
         return Arrays.asList(
             new QuickReply("Oil change"),
@@ -758,7 +850,7 @@ public class DatabaseChatService {
             new QuickReply("General maintenance")
         );
     }
-    
+
     private List<QuickReply> getBookingQuickReplies() {
         return Arrays.asList(
             new QuickReply("Yes, schedule appointment"),
@@ -766,7 +858,7 @@ public class DatabaseChatService {
             new QuickReply("What's the cost?")
         );
     }
-    
+
     private List<QuickReply> getTimeSlotQuickReplies() {
         return Arrays.asList(
             new QuickReply("Tomorrow morning"),
@@ -774,7 +866,7 @@ public class DatabaseChatService {
             new QuickReply("Next week")
         );
     }
-    
+
     private List<QuickReply> getEmergencyQuickReplies() {
         return Arrays.asList(
             new QuickReply("It makes clicking sounds"),
@@ -783,7 +875,7 @@ public class DatabaseChatService {
             new QuickReply("Send roadside assistance")
         );
     }
-    
+
     private List<QuickReply> getComplaintQuickReplies() {
         return Arrays.asList(
             new QuickReply("Speak to manager"),
@@ -792,25 +884,269 @@ public class DatabaseChatService {
             new QuickReply("Schedule callback")
         );
     }
-    
+
     private List<QuickReply> getTireAssistanceQuickReplies() {
-        return Arrays.asList(
-            new QuickReply("I have a spare tire"),
-            new QuickReply("Please bring a tire"),
-            new QuickReply("Just need air/inflation"),
-            new QuickReply("Send technician now")
-        );
+        List<QuickReply> quickReplies = new ArrayList<>();
+        
+        try {
+            // Get tire-related services from database
+            List<com.dsl.entity.Service> tireServices = serviceRepository.searchByNameOrDescription("tire");
+            
+            // Add database services as quick replies
+            for (com.dsl.entity.Service service : tireServices) {
+                String displayText = String.format("%s ($%.2f - %d min)", 
+                    service.getName(), 
+                    service.getPrice(), 
+                    service.getDurationMinutes());
+                quickReplies.add(new QuickReply(displayText, service.getName()));
+            }
+            
+            // Add emergency tire options if no services found or as additional options
+            if (quickReplies.isEmpty()) {
+                quickReplies.addAll(Arrays.asList(
+                    new QuickReply("Tire Replacement"),
+                    new QuickReply("Tire Repair"),
+                    new QuickReply("Flat Tire Fix"),
+                    new QuickReply("Emergency Tire Service")
+                ));
+            } else {
+                // Add emergency options to existing services
+                quickReplies.addAll(Arrays.asList(
+                    new QuickReply("Emergency Tire Service"),
+                    new QuickReply("Mobile Tire Repair")
+                ));
+            }
+            
+        } catch (Exception e) {
+            // Fallback to static options if database query fails
+            quickReplies.addAll(Arrays.asList(
+                new QuickReply("Tire Replacement"),
+                new QuickReply("Tire Repair"),
+                new QuickReply("Flat Tire Fix"),
+                new QuickReply("Emergency Tire Service")
+            ));
+        }
+        
+        return quickReplies;
     }
-    
+
     private List<QuickReply> getOilAssistanceQuickReplies() {
+        List<QuickReply> quickReplies = new ArrayList<>();
+        
+        try {
+            // Get oil-related services from database
+            List<com.dsl.entity.Service> oilServices = serviceRepository.searchByNameOrDescription("oil");
+            
+            // Add database services as quick replies
+            for (com.dsl.entity.Service service : oilServices) {
+                String displayText = String.format("%s ($%.2f - %d min)", 
+                    service.getName(), 
+                    service.getPrice(), 
+                    service.getDurationMinutes());
+                quickReplies.add(new QuickReply(displayText, service.getName()));
+            }
+            
+            // Add emergency options if no services found or as additional options
+            if (quickReplies.isEmpty()) {
+                quickReplies.addAll(Arrays.asList(
+                    new QuickReply("Oil Change Service"),
+                    new QuickReply("Oil Top-up Service"),
+                    new QuickReply("Engine Oil Replacement"),
+                    new QuickReply("Emergency Oil Delivery")
+                ));
+            } else {
+                // Add emergency option to existing services
+                quickReplies.add(new QuickReply("Emergency Oil Delivery"));
+            }
+            
+        } catch (Exception e) {
+            // Fallback to static options if database query fails
+            quickReplies.addAll(Arrays.asList(
+                new QuickReply("Oil Change Service"),
+                new QuickReply("Oil Top-up Service"),
+                new QuickReply("Engine Oil Replacement"),
+                new QuickReply("Emergency Oil Delivery")
+            ));
+        }
+        
+        return quickReplies;
+    }
+
+    private List<QuickReply> getTireLocationQuickReplies() {
         return Arrays.asList(
-            new QuickReply("Yes, arrange oil service"),
-            new QuickReply("Check oil level first"),
-            new QuickReply("Emergency oil delivery"),
-            new QuickReply("Schedule oil change")
+            new QuickReply("I'm at home"),
+            new QuickReply("I'm at work"),
+            new QuickReply("On the highway"),
+            new QuickReply("In a parking lot"),
+            new QuickReply("Share my location")
         );
     }
-    
+
+    private List<QuickReply> getTireConfirmationQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("Yes, dispatch now"),
+            new QuickReply("What's the ETA?"),
+            new QuickReply("How much will it cost?"),
+            new QuickReply("Change service option")
+        );
+    }
+
+    private List<QuickReply> getOilLocationQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("I'm at home"),
+            new QuickReply("I'm at work"), 
+            new QuickReply("On the road"),
+            new QuickReply("In a parking lot"),
+            new QuickReply("Share my location")
+        );
+    }
+
+    private String handleOilServiceChoice(UserContext context, String choice, ChatSession session) {
+        String customerName = context.getCustomerName() != null ? context.getCustomerName() : 
+                             (session.getCustomer() != null ? session.getCustomer().getFirstName() : "");
+
+        switch (choice.toLowerCase()) {
+            case "oil light is on":
+                context.setConversationState("oil_light_selected");
+                return String.format("I understand, %s. An oil light usually means your engine oil is critically low. " +
+                    "I can send immediate oil delivery and refill service to prevent engine damage. " +
+                    "Where are you located so I can dispatch help right away?", 
+                    customerName != null ? customerName : "");
+
+            case "out of oil completely":
+                context.setConversationState("oil_empty_selected");
+                context.setEmergencyMode(true);
+                return String.format("This is urgent, %s! Running completely out of oil can cause serious engine damage. " +
+                    "I'm dispatching emergency oil delivery immediately. Please don't drive the vehicle. " +
+                    "What's your current location?", 
+                    customerName != null ? customerName : "");
+
+            case "low oil level":
+                context.setConversationState("oil_low_selected");
+                return String.format("Got it, %s. Low oil levels should be addressed soon to prevent engine wear. " +
+                    "I can send a technician to check and top up your oil. Where would you like this service?", 
+                    customerName != null ? customerName : "");
+
+            case "need oil change":
+                context.setConversationState("oil_change_selected");
+                return String.format("Perfect, %s! I can arrange a full oil change service. " +
+                    "We can do this at your location or you can visit our service center. " +
+                    "Where would you prefer the service?", 
+                    customerName != null ? customerName : "");
+
+            case "emergency oil delivery":
+                context.setConversationState("oil_emergency_selected");
+                context.setEmergencyMode(true);
+                return String.format("Understood, %s. I'm treating this as urgent. " +
+                    "Emergency oil delivery will be dispatched immediately with high-quality engine oil. " +
+                    "Please share your location for fastest response.", 
+                    customerName != null ? customerName : "");
+
+            default:
+                return "I didn't catch that option. Please choose from the available oil service options.";
+        }
+    }
+
+    private String handleLocationProvided(UserContext context, Map<String, String> entities, ChatSession session) {
+        String location = entities.get("location");
+        if (location == null) {
+            // Try to extract location from common phrases
+            location = extractLocationFromUserMessage(context);
+        }
+        
+        if (location != null) {
+            context.setCurrentLocation(location);
+            String customerName = context.getCustomerName() != null ? context.getCustomerName() : 
+                                 (session.getCustomer() != null ? session.getCustomer().getFirstName() : "");
+            
+            String conversationState = context.getConversationState();
+            
+            if ("tire_replacement_selected".equals(conversationState)) {
+                context.setConversationState("tire_service_ready");
+                return String.format("Perfect, %s! I've located you at %s. I can dispatch a technician with a matching tire " +
+                    "who will arrive in approximately 25 minutes. The service includes tire replacement and disposal of the old tire. " +
+                    "Shall I send them now?", customerName, location);
+            } else if ("tire_patch_selected".equals(conversationState)) {
+                context.setConversationState("tire_service_ready");
+                return String.format("Got it, %s! I have your location at %s. I'll send a technician with patching equipment " +
+                    "who will arrive in about 20 minutes. This will get you safely to a garage for a permanent fix. " +
+                    "Should I dispatch them now?", customerName, location);
+            } else if ("tire_estimate_selected".equals(conversationState)) {
+                context.setConversationState("tire_service_ready");
+                return String.format("Excellent, %s! I've pinned your location at %s. I'll send a mobile technician " +
+                    "to assess your tire damage and provide a repair estimate. They'll arrive in about 15 minutes. " +
+                    "Proceed with dispatch?", customerName, location);
+            } else if ("tire_immediate_dispatch".equals(conversationState)) {
+                context.setConversationState("tire_service_dispatched");
+                return String.format("All set, %s! ✅ I've dispatched emergency tire assistance to %s. " +
+                    "The nearest technician is en route and will arrive in 20-25 minutes. " +
+                    "Please stay safe and keep your hazard lights on if you're roadside. 🚨", customerName, location);
+            }
+        }
+        
+        return "I need your location to dispatch tire assistance. Could you please share where you are?";
+    }
+
+    private String handleServiceSelection(UserContext context, String userMessage, ChatSession session) {
+        String customerName = context.getCustomerName() != null ? context.getCustomerName() : 
+                             (session.getCustomer() != null ? session.getCustomer().getFirstName() : "");
+
+        // Extract service name from the message (could be from quick reply)
+        String selectedService = extractServiceFromMessage(userMessage);
+        
+        if (selectedService != null) {
+            context.setCurrentService(selectedService);
+            context.setConversationState("service_selected");
+            
+            // Try to find the service in database for pricing info
+            try {
+                Optional<com.dsl.entity.Service> serviceOpt = serviceRepository.findByNameIgnoreCase(selectedService);
+                if (serviceOpt.isPresent()) {
+                    com.dsl.entity.Service service = serviceOpt.get();
+                    return String.format("Great choice, %s! I can arrange %s for you. " +
+                        "This service typically takes %d minutes and costs $%.2f. " +
+                        "Would you like to schedule this service?", 
+                        customerName != null ? customerName : "",
+                        service.getName(),
+                        service.getDurationMinutes(),
+                        service.getPrice());
+                }
+            } catch (Exception e) {
+                // Continue with generic response if database lookup fails
+            }
+            
+            return String.format("Perfect, %s! I can arrange %s for you. " +
+                "Would you like to schedule this service now?", 
+                customerName != null ? customerName : "", selectedService);
+        }
+        
+        return "I didn't catch which service you'd like. Please select from the available options.";
+    }
+
+    private String extractServiceFromMessage(String message) {
+        // Extract service name from message - could be from quick reply format "Service Name ($price - duration)"
+        if (message.contains("($")) {
+            // Extract service name before the price info
+            return message.substring(0, message.indexOf("($")).trim();
+        }
+        return message.trim();
+    }
+
+    private List<QuickReply> getServiceBookingQuickReplies() {
+        return Arrays.asList(
+            new QuickReply("Yes, schedule now"),
+            new QuickReply("Tell me more details"),
+            new QuickReply("What's included?"),
+            new QuickReply("Choose different service")
+        );
+    }
+
+    private String extractLocationFromUserMessage(UserContext context) {
+        // This would extract location from phrases like "I'm at home", "I'm at work", etc.
+        // For now, return a placeholder - in real implementation, this would use NLP
+        return "Current Location";
+    }
+
     private List<QuickReply> getDefaultQuickReplies() {
         return Arrays.asList(
             new QuickReply("I need car service"),
@@ -819,12 +1155,12 @@ public class DatabaseChatService {
             new QuickReply("Talk to human")
         );
     }
-    
+
     // Conversion methods
     private Map<String, Object> convertEntitiesToMap(Map<String, String> entities) {
         return new HashMap<>(entities);
     }
-    
+
     private Map<String, Object> convertVehicleToMap(VehicleDTO vehicleDTO) {
         Map<String, Object> map = new HashMap<>();
         if (vehicleDTO.getMake() != null) map.put("make", vehicleDTO.getMake());
@@ -832,7 +1168,7 @@ public class DatabaseChatService {
         if (vehicleDTO.getYear() != null) map.put("year", vehicleDTO.getYear());
         return map;
     }
-    
+
     private VehicleDTO convertMapToVehicle(Map<String, Object> map) {
         VehicleDTO vehicleDTO = new VehicleDTO();
         if (map.containsKey("make")) vehicleDTO.setMake((String) map.get("make"));
@@ -840,7 +1176,7 @@ public class DatabaseChatService {
         if (map.containsKey("year")) vehicleDTO.setYear((Integer) map.get("year"));
         return vehicleDTO;
     }
-    
+
     private VehicleDTO convertEntityToDto(Vehicle entity) {
         VehicleDTO dto = new VehicleDTO();
         dto.setMake(entity.getMake());
@@ -851,12 +1187,12 @@ public class DatabaseChatService {
         dto.setMileage(entity.getMileage());
         return dto;
     }
-    
+
     // Public methods for chat history
     public List<ChatMessage> getChatHistory(String sessionId) {
         return chatMessageRepository.findBySessionIdOrderByTimestamp(sessionId);
     }
-    
+
     public UserContext updateContext(String sessionId, UserContext context) {
         ChatSession session = getOrCreateSession(sessionId);
         updateSessionContext(session, context);

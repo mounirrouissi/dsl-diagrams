@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -17,11 +18,12 @@ public class ChatMessageResponse {
     private boolean requiresHumanHandoff;
     private String sentiment;
 
-    public ChatMessageResponse(String s, String error, UserContext context, Object o) {
+    public ChatMessageResponse(String s, String error, UserContext context,         List<QuickReply> quickReplies
+) {
         this.message = s;
         this.intent = error;
         this.context = context;
-        this.quickReplies = null;
+        this.quickReplies = quickReplies != null ? quickReplies : new ArrayList<>();
         this.requiresHumanHandoff = false;
         this.sentiment = null;
     }
